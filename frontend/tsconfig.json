@@ -4,25 +4,21 @@
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "es2020",
-      "dom",
-      "scripthost"
-    ],
+    "lib": ["es2020", "dom", "scripthost"],
     "paths": {
       "@/*": ["./src/*"]
     },
 
-      "target": "es5",
-      "allowJs": true,
-      "skipLibCheck": true,
-      "strict": false,
-      "forceConsistentCasingInFileNames": true,
-      "noEmit": true,
-      "esModuleInterop": true,
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
+    "target": "es5",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
 
   "references": [
@@ -31,5 +27,4 @@
     }
   ],
   "exclude": ["node_modules/**"]
-
 }

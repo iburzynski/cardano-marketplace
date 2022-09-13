@@ -3,10 +3,10 @@ import { Buffer } from "buffer";
 import { RouterView } from "vue-router";
 import { ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import {decodeAssetName, listProviders, walletValue} from "@/scripts/wallet";
-import type {CIP30Provider} from "@/types";
-import {BigNum} from "@emurgo/cardano-serialization-lib-asmjs";
-import {getAssetDetail} from "@/scripts/blockfrost";
+import { decodeAssetName, listProviders, walletValue } from "@/scripts/wallet";
+import type { CIP30Provider } from "@/types";
+import { BigNum } from "@emurgo/cardano-serialization-lib-asmjs";
+import { getAssetDetail } from "@/scripts/blockfrost";
 
 const open = ref(true)
 
@@ -53,4 +53,4 @@ const open = ref(true)
     </footer>
   </div>
   <!-- This example requires Tailwind CSS v2.0+ -->
-  </template>
+</template>

@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               cardano-marketplace
 version:            3.0.0.0
 
@@ -22,6 +22,7 @@ maintainer:         Sireto
 -- extra-source-files: CHANGELOG.md
 
 library marketplace-plutus
+  default-language: Haskell2010
   exposed-modules:
     Plutus.Contracts.V1.SimpleMarketplace
     Plutus.Contracts.V2.SimpleMarketplace
@@ -29,8 +30,8 @@ library marketplace-plutus
     Plutus.Contracts.V2.ConfigurableMarketplace
   hs-source-dirs: marketplace-plutus
   build-depends:
-      base  -any
-    , plutus-tx    
+      base
+    , plutus-tx
     , cardano-ledger-alonzo
     , plutus-ledger-api
     , plutus-tx-plugin
@@ -41,13 +42,14 @@ library marketplace-plutus
     , kuber
 
 library marketplace-core
+  default-language: Haskell2010
   exposed-modules:
     Cardano.Marketplace.V1.Core
     Cardano.Marketplace.Common.TextUtils
     Cardano.Marketplace.Common.TransactionUtils
   hs-source-dirs: marketplace-core
   build-depends:
-      base -any
+      base
     , aeson
     , bytestring
     , containers
@@ -56,7 +58,7 @@ library marketplace-core
     , serialise
     , http-types
     , marketplace-plutus
-    , text 
+    , text
     , text-conversions
     , cardano-api
     , cardano-ledger-shelley
@@ -71,12 +73,13 @@ library marketplace-core
     , kuber
 
 executable  market-cli
+  default-language: Haskell2010
   main-is:  Main.hs
   hs-source-dirs: marketplace-cli
   other-modules:
       Cli
   build-depends:
-      base -any
+      base
     , directory
     , cmdargs >= 0.10.18
     , plutus-ledger-api
@@ -104,9 +107,9 @@ test-suite marketplace-test
   build-depends:
     base >= 4.9 && <5
     , kuber
-    , QuickCheck -any
-    , tasty -any
-    , tasty-hunit -any
+    , QuickCheck
+    , tasty
+    , tasty-hunit
     , containers
     , bytestring
     , serialise
@@ -142,9 +145,9 @@ executable market-test
   build-depends:
     base >= 4.9 && <5
     , kuber
-    , QuickCheck -any
-    , tasty -any
-    , tasty-hunit -any
+    , QuickCheck
+    , tasty
+    , tasty-hunit
     , containers
     , bytestring
     , serialise

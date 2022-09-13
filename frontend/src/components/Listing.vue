@@ -1,38 +1,39 @@
 <script setup lang="ts">
-import {VAceEditor} from "vue3-ace-editor";
+import { VAceEditor } from "vue3-ace-editor";
 import ace from "ace-builds";
 import workerJsonUrl from "ace-builds/src-noconflict/mode-json";
-import type {CIP30Instace, CIP30Provider} from "@/types";
-import {Buffer} from "buffer";
-import {listMarket, getAssetDetail, getDatum} from "@/scripts/blockfrost";
-import {decodeAssetName, listProviders, callKuberAndSubmit, transformNftImageUrl, renderLovelace} from "@/scripts/wallet";
+import type { CIP30Instance, CIP30Provider } from "@/types";
+import { Buffer } from "buffer";
+import { listMarket, getAssetDetail, getDatum } from "@/scripts/blockfrost";
+import { decodeAssetName, listProviders, callKuberAndSubmit, transformNftImageUrl, renderLovelace } from "@/scripts/wallet";
 import * as database from "@/scripts/database"
-import {market} from "@/config";
-import {Address, BaseAddress, Ed25519KeyHash, StakeCredential} from "@emurgo/cardano-serialization-lib-asmjs";
-import {walletAction} from "@/scripts/sotre"
+import { market } from "@/config";
+import { Address, BaseAddress, Ed25519KeyHash, StakeCredential } from "@emurgo/cardano-serialization-lib-asmjs";
+import { walletAction } from "@/scripts/sotre"
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 </script>
 
 <template>
   <div>
-    <div class=" ml-2"> 
+    <div class=" ml-2">
       <div v-if="utxos.length==0" class="text-gray-400 font-semibold text-center my-5"> {{message}}</div>
       <div v-for="utxo in utxos" :key="utxo.id" class="p-2 flex">
-        <img :alt="utxo.assetName +'_img'" class="inline-block h-32 w-32  mr-4 border-red-300 border-2" :src="utxo.detail._imageUrl"/>
+        <img :alt="utxo.assetName +'_img'" class="inline-block h-32 w-32  mr-4 border-red-300 border-2"
+          :src="utxo.detail._imageUrl" />
         <div class="flex flex-col justify-between pb-2">
           <div>
 
             <div v-if="utxo.detail._name">
               <a :href="'https://testnet.cardanoscan.io/token/'+utxo.nft"> &#x29c9; </a>
 
-              <span class="text-blue-900 text-xl font-extrabol"> {{ utxo.detail._name }}  </span>
-              <span v-if="utxo.detail?.onchain_metadata?.artist"> <span
-                  class="text-gray-400 text-xs"> &nbsp; by {{ utxo.detail.onchain_metadata.artist }}</span>  </span>
+              <span class="text-blue-900 text-xl font-extrabol"> {{ utxo.detail._name }} </span>
+              <span v-if="utxo.detail?.onchain_metadata?.artist"> <span class="text-gray-400 text-xs"> &nbsp; by {{
+              utxo.detail.onchain_metadata.artist }}</span> </span>
             </div>
 
             <div v-else class="text-blue-700 font-extrabold"> {{ utxo.policy.substring(0, 8) }}...{{
-                utxo.assetName
-              }}
+            utxo.assetName
+            }}
             </div>
 
             <div v-if="utxo.detail?.onchain_metadata">
@@ -46,10 +47,10 @@ ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
             </div>
           </div>
           <div>
-            <button  @click="buy(utxo)"
-                class="bg-transparent hover:bg-blue-300 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-blue-200 rounded">
+            <button @click="buy(utxo)"
+              class="bg-transparent hover:bg-blue-300 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-blue-200 rounded">
               {{
-                renderLovelace(utxo.detail?.datum?.fields[1]?.int)
+              renderLovelace(utxo.detail?.datum?.fields[1]?.int)
               }} Ada (Buy)
             </button>
           </div>
@@ -93,60 +94,60 @@ export default {
           }).catch(e => {
             console.log("Error returned from db", e)
             return getDatum(utxo.data_hash)
-                .then(dataResponse => {
-                      utxo.datum = dataResponse.json_value
-                      return getAssetDetail(utxo.nft)
-                    }
-                ).then((nftDetail: any) => {
+              .then(dataResponse => {
+                utxo.datum = dataResponse.json_value
+                return getAssetDetail(utxo.nft)
+              }
+              ).then((nftDetail: any) => {
+                if (nftDetail.onchain_metadata) {
                   if (nftDetail.onchain_metadata) {
-                    if (nftDetail.onchain_metadata) {
-                      if (nftDetail.onchain_metadata.name) {
-                        nftDetail._name = nftDetail.onchain_metadata.name
-                      }
-                      if (nftDetail.onchain_metadata.image) {
-                        nftDetail._imageUrl =transformNftImageUrl(nftDetail.onchain_metadata.image)
-                      }
+                    if (nftDetail.onchain_metadata.name) {
+                      nftDetail._name = nftDetail.onchain_metadata.name
+                    }
+                    if (nftDetail.onchain_metadata.image) {
+                      nftDetail._imageUrl = transformNftImageUrl(nftDetail.onchain_metadata.image)
                     }
                   }
-                  nftDetail.utxo = utxo.id
-                  nftDetail.datum = utxo.datum
-                  setTimeout(() => {
-                    database.saveUtxos(db, [nftDetail])
-                  })
-                  return nftDetail
-                }).catch(e => {
-                  if (e.status_code && e.status_code == 404) {
-                    const data = {
-                      utxo: utxo.id,
-                      status_code: e.status_code
-                    }
-                    database.saveUtxos(db, [data])
-                    return data
-                  } else {
-                    console.error(e)
-                    throw e
-                  }
+                }
+                nftDetail.utxo = utxo.id
+                nftDetail.datum = utxo.datum
+                setTimeout(() => {
+                  database.saveUtxos(db, [nftDetail])
                 })
+                return nftDetail
+              }).catch(e => {
+                if (e.status_code && e.status_code == 404) {
+                  const data = {
+                    utxo: utxo.id,
+                    status_code: e.status_code
+                  }
+                  database.saveUtxos(db, [data])
+                  return data
+                } else {
+                  console.error(e)
+                  throw e
+                }
+              })
           })
         })).then((x: Array<any>) => {
-              const lookup = {}
-              x.filter(v => v.value && v.value.datum).forEach(
-                  x => {
-                    lookup[x.value.utxo] = x.value
-                  })
-              utxos.forEach(v => v.detail = lookup[v.id])
-              const validUtxos = utxos.filter(v => v.detail)
-              console.log("Valid market utxos", validUtxos)
-              this.utxos = validUtxos
-              if(validUtxos.length == 0){
-                this.message="Marketplace is empty"
-              }
-            }
+          const lookup = {}
+          x.filter(v => v.value && v.value.datum).forEach(
+            x => {
+              lookup[x.value.utxo] = x.value
+            })
+          utxos.forEach(v => v.detail = lookup[v.id])
+          const validUtxos = utxos.filter(v => v.detail)
+          console.log("Valid market utxos", validUtxos)
+          this.utxos = validUtxos
+          if (validUtxos.length == 0) {
+            this.message = "Marketplace is empty"
+          }
+        }
         )
-      }).catch((e)=>{
-        if(e.status_code == 404){
-            this.message="Marketplace is empty"
-        }else{
+      }).catch((e) => {
+        if (e.status_code == 404) {
+          this.message = "Marketplace is empty"
+        } else {
           alert(e.message)
         }
       })
@@ -170,43 +171,43 @@ export default {
     mapDescription(desc: Array<string> | string) {
       return Array.isArray(desc) ? desc.join('') : desc
     },
-    async buy( utxo) {
+    async buy(utxo) {
       console.log(utxo)
       const datum = utxo.detail.datum
       const cost = datum.fields[1].int;
-      const sellerPubKeyHashHex =datum.fields[0].fields[0].fields[0].bytes
+      const sellerPubKeyHashHex = datum.fields[0].fields[0].fields[0].bytes
       const sellerStakeKeyHashHex = datum.fields[0].fields[1].fields[0].bytes
       const vkey = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(Buffer.from(sellerPubKeyHashHex, "hex")))
       const stakeKey = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(Buffer.from(sellerStakeKeyHashHex, "hex")))
-      const sellerAddr= BaseAddress.new(0,vkey,stakeKey)
-      console.log("SellerAddr",sellerAddr.to_address().to_bech32())
+      const sellerAddr = BaseAddress.new(0, vkey, stakeKey)
+      console.log("SellerAddr", sellerAddr.to_address().to_bech32())
 
-      walletAction.callback=async (provider : CIP30Instace)=>{
-          const request = {
-        selections: await provider.getUtxos(),
-        inputs: [
-          {
-            address: market.address,
-            utxo: {
-              "hash":utxo.tx_hash,
-              "index": utxo.tx_index
+      walletAction.callback = async (provider: CIP30Instance) => {
+        const request = {
+          selections: await provider.getUtxos(),
+          inputs: [
+            {
+              address: market.address,
+              utxo: {
+                "hash": utxo.tx_hash,
+                "index": utxo.tx_index
+              },
+              script: market.script,
+              // value: `2A + ${nft.policy}.${nft.asset_name}`,
+              datum: datum,
+              redeemer: { fields: [], constructor: 0 },
             },
-            script: market.script,
-            // value: `2A + ${nft.policy}.${nft.asset_name}`,
-            datum: datum,
-            redeemer: { fields: [], constructor: 0 },
-          },
-        ],
-        outputs: [
-          {
-            address: sellerAddr.to_address().to_bech32("addr_test"),
-            value: cost
-          }
-        ],
-      };
-      return callKuberAndSubmit(provider,JSON.stringify(request))
+          ],
+          outputs: [
+            {
+              address: sellerAddr.to_address().to_bech32("addr_test"),
+              value: cost
+            }
+          ],
+        };
+        return callKuberAndSubmit(provider, JSON.stringify(request))
       }
-      walletAction.enable=true
+      walletAction.enable = true
     },
     save(v: string) {
       localStorage.setItem("editor.content", v);

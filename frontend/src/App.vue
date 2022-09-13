@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {RouterView} from "vue-router";
+import { RouterView } from "vue-router";
 import Wallet from "./components/Wallet.vue"
-import {walletState} from "@/scripts/sotre";
-import {market} from "@/config"
+import { walletState } from "@/scripts/sotre";
+import { market } from "@/config"
 
 </script>
 
@@ -31,19 +31,21 @@ import {market} from "@/config"
             <a class="nav-link active" aria-current="page" href="/">Marketplace</a>
           </li>
           <li class="nav-item  border-l-2 border-l-gray-300 pl-2">
-            <a class="nav-link text-gray-500 hover:text-gray-700 focus:text-gray-700 p-0" @click="walletState=true">Wallet</a>
+            <a class="nav-link text-gray-500 hover:text-gray-700 focus:text-gray-700 p-0"
+              @click="walletState=true">Wallet</a>
           </li>
         </ul>
         <!-- Left links -->
       </div>
       <!-- Collapsible wrapper -->
       <div>
-      <a :href="'https://testnet.cardanoscan.io/address/'+market.address" class="items-center text-sm mr-2 underline text-blue-500">
-        View in explorer
-      </a>
+        <a :href="'https://testnet.cardanoscan.io/address/'+market.address"
+          class="items-center text-sm mr-2 underline text-blue-500">
+          View in explorer
+        </a>
       </div>
     </nav>
-    <RouterView class="flex-grow"/>
+    <RouterView class="flex-grow" />
     <footer class="bg-gray-200 text-center lg:text-left">
       <div class="text-gray-700 text-center p-4" style="background-color: rgba(0, 0, 0, 0.2);">
         Simple Marketplace |

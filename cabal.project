@@ -1,16 +1,25 @@
--- Bump this if you need newer packages
-index-state:2022-02-18T00:00:00Z
+index-state: 2022-02-18T00:00:00Z
 
 packages:
-  .
+  ./
 
--- You never, ever, want this.
+-- We never, ever, want this.
 write-ghc-environment-files: never
 
 -- Always build tests and benchmarks.
-tests: True
-benchmarks: False
+tests: true
+benchmarks: true
 
+-- The only sensible test display option.
+test-show-details: streaming
+
+allow-newer:
+  size-based:template-haskell
+
+-- These packages appear in our dependency tree and are very slow to build.
+-- Empirically, turning off optimization shaves off ~50% build time.
+-- It also mildly improves recompilation avoidance.
+-- For deve work we don't care about performance so much, so this is okay.
 package cardano-ledger-alonzo
   optimization: False
 package ouroboros-consensus-shelley
@@ -20,6 +29,27 @@ package ouroboros-consensus-cardano
 package cardano-api
   optimization: False
 
+package snap-server
+  flags: +openssl
+
+package comonad
+  flags: -test-doctests
+
+package cardano-ledger-alonzo-test
+  tests: False
+
+allow-newer:
+  *:aeson,
+  monoidal-containers:aeson,
+  size-based:template-haskell
+
+constraints:
+    hedgehog >= 1.0,
+    bimap >= 0.4.0,
+    libsystemd-journal >= 1.4.4,
+    systemd >= 2.3.0,
+    network >= 3.1.1.0,
+    HSOpenSSL >= 0.11.7.2
 
 source-repository-package
   type: git
@@ -39,6 +69,7 @@ source-repository-package
   tag: 967d79533c21e33387d0227a5f6cc185203fe658
   --sha256: 0rbqb7a64aya1qizlr3im06hdydg9zr6sl3i8bvqqlf7kpa647sd
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-base
@@ -54,17 +85,20 @@ source-repository-package
     orphans-deriving-via
     slotting
     strict-containers
+  --sha256: 0p0az3sbkhb7njji8xxdrfb0yx2gc8fmrh872ffm8sfip1w29gg1
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-crypto
   tag: f73079303f663e028288f9f4a9e08bcca39a923e
+  --sha256: 1n87i15x54s0cjkh3nsxs4r1x016cdw1fypwmr68936n3xxsjn6q
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-ledger
   tag: ce3057e0863304ccb3f79d78c77136219dc786c6
-  --sha256: 0my3801w1vinc0kf5yh9lxl6saqxgwm6ccg0vvzi104pafcwwcqx
   subdir:
     eras/babbage/impl
     eras/alonzo/impl
@@ -86,7 +120,9 @@ source-repository-package
     libs/small-steps
     libs/small-steps-test
     libs/non-integral
+  --sha256: 19ijcy1sl1iqa7diy5nsydnjsn3281kp75i2i42qv0fpn58238s9
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
@@ -94,32 +130,47 @@ source-repository-package
   subdir:
     cardano-prelude
     cardano-prelude-test
+  --sha256: 00h10l5mmiza9819p9v5q5749nb9pzgi20vpzpy1d34zmh6gf1cj
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/goblins
   tag: cde90a2b27f79187ca8310b6549331e59595e7ba
+  --sha256: 17c88rbva3iw82yg9srlxjv2ia5wjb9cyqw44hik565f5v9svnyg
 
-
+-- Direct dependency.
+-- Are you thinking of updating this tag to some other commit?
+-- Please ensure that the commit you are about to use is the latest one from
+-- the *develop* branch of this repo:
+--   * <https://github.com/input-output-hk/iohk-monitoring-framework/commits/develop>
+-- (not master!)
+-- In particular we rely on the code from this PR:
+--  * <https://github.com/input-output-hk/iohk-monitoring-framework/pull/622>
+-- being merged.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
   tag: 066f7002aac5a0efc20e49643fea45454f226caa
   subdir:
+    contra-tracer
     iohk-monitoring
     tracer-transformers
-    contra-tracer
-    plugins/backend-aggregation
     plugins/backend-ekg
+    plugins/backend-aggregation
     plugins/backend-monitoring
     plugins/backend-trace-forwarder
     plugins/scribe-systemd
+  --sha256: 0s6x4in11k5ba7nl7la896g28sznf9185xlqg9c604jqz58vj9nj
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/Win32-network
   tag: 3825d3abf75f83f406c1f7161883c438dac7277d
+  --sha256: 19wahfv726fa3mqajpqdqhnl9ica3xmf68i254q45iyjcpj1psqx
 
+-- Should follow cardano-wallet.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ouroboros-network
@@ -135,6 +186,7 @@ source-repository-package
     ouroboros-network
     ouroboros-network-framework
     ouroboros-network-testing
+  --sha256: 1fmab5hmi1y8lss97xh6hhikmyhsx9x31yhvg6zpr2kcq7kc6qkf
 
 source-repository-package
   type: git
@@ -144,6 +196,7 @@ source-repository-package
     io-classes
     io-sim
     strict-stm
+  --sha256: 0vb2pd9hl89v2y5hrhrsm69yx0jf98vppjmfncj2fraxr3p3lldw
 
 source-repository-package
   type: git
@@ -153,7 +206,9 @@ source-repository-package
     typed-protocols
     typed-protocols-cborg
     typed-protocols-examples
+  --sha256: 1lr97b2z7l0rpsmmz92rsv27qzd5vavz10cf7n25svya4kkiysp5
 
+-- Direct dependency.
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/plutus
@@ -166,6 +221,7 @@ source-repository-package
     prettyprinter-configurable
     stubs/plutus-ghc-stub
     word-array
+  --sha256: 180jq8hd0jlg48ya7b5yw3bnd2d5czy0b1agy9ng3mgnzpyq747i
 
 -- Drops an instance breaking our code. Should be released to Hackage eventually.
 source-repository-package
@@ -174,6 +230,7 @@ source-repository-package
   tag: ee59880f47ab835dbd73bea0847dab7869fc20d8
   --sha256: 1lrzknw765pz2j97nvv9ip3l1mcpf2zr4n56hwlz0rk7wq7ls4cm
 
+-- Should follow cardano-node
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/ekg-forward
@@ -186,43 +243,19 @@ source-repository-package
   tag: 4ec92ded05ccf59ba4a874be4b404ac1b6d666b6
   --sha256: 00fvvaf4ir4hskq4a6gggbh2wmdvy8j8kn6s4m1p1vlh8m8mq514
 
-
 -- A lot of plutus dependencies have to be synchronized with the dependencies of
 -- cardano-node. If you update cardano-node, please make sure that all dependencies
 -- of cardano-node are also updated.
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/cardano-node.git
+  location: https://github.com/input-output-hk/cardano-node
   tag: 43393ac88faa99986ecaa0be409e8b6353f5e9fe
   subdir:
     cardano-api
+  --sha256: 0g2m1gj0jqsk8gwx19n1h6kh3xjywwvxzw5caqj4jwz5m2z1cmml
 
 source-repository-package
   type: git
   location: https://github.com/dquadrant/kuber
   tag: dbb140ddb4c6a0b34d3e09e1cbc4ee816aefed1b
-
-constraints:
-    hedgehog >= 1.0
-  , bimap >= 0.4.0
-  , libsystemd-journal >= 1.4.4
-  , systemd >= 2.3.0
-    -- systemd-2.3.0 requires at least network 3.1.1.0 but it doesn't declare
-    -- that dependency
-  , network >= 3.1.1.0
-  , HSOpenSSL >= 0.11.7.2
-
-
-package snap-server
-  flags: +openssl
-
-package comonad
-  flags: -test-doctests
-
-package cardano-ledger-alonzo-test
-  tests: False
-
-allow-newer:
-  *:aeson,
-  monoidal-containers:aeson,
-  size-based:template-haskell
+  --sha256: 0slmcm1f8jaq6nfxj4v20dgdwqpk51lgaqxmfhknqjgpvvv4gd0a
