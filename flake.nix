@@ -5,7 +5,7 @@
       nixpkgs.follows = "haskellNix/nixpkgs-unstable";
       flake-utils.url = "github:numtide/flake-utils";
     };
-  outputs = { self, nixpkgs, flake-utils, haskellNix, cardanoBase }:
+  outputs = { self, nixpkgs, flake-utils, haskellNix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ haskellNix.overlay
