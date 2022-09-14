@@ -11,7 +11,7 @@ import {
   calculatePolicyHash,
   decodeAssetName,
   listProviders,
-  walletValue,
+  getWalletValue,
 } from "@/scripts/wallet";
 import type { CIP30Instance, CIP30Provider } from "@/types";
 import { getAssetDetail } from "@/scripts/blockfrost";
@@ -23,7 +23,7 @@ import {
   BaseAddress,
   ScriptPubkey,
 } from "@emurgo/cardano-serialization-lib-asmjs";
-import type { WatchStopHandle } from "vue";
+import type { WatchCallback, WatchStopHandle } from "vue";
 </script>
 
 <template>
@@ -32,7 +32,7 @@ import type { WatchStopHandle } from "vue";
     <Dialog as="div" class="relative z-10" @close="closeOverlay">
       <TransitionChild as="template" enter="ease-in-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
         leave="ease-in-out duration-300" leave-from="opacity-100" leave-to="opacity-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
       </TransitionChild>
       <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
@@ -188,20 +188,23 @@ export default {
     };
   },
   computed: {
-    shown() {
+    shown(): boolean {
       return walletAction.enable || walletState.value;
     },
   },
   mounted() {
-    let unWatch: WatchStopHandle;
-    let handler = (newVal, oldVal) => {
+    // const handler: WatchCallback = (newVal, oldVal) => {
+    //   if (newVal !== oldVal) {
+    //     this.providers = listProviders();
+    //     unWatch();
+    //   }
+    // };
+    const unWatch: WatchStopHandle = this.$watch("shown", (newVal: boolean, oldVal: boolean) => {
       if (newVal !== oldVal) {
-        const providers = listProviders();
-        this.providers = providers;
+        this.providers = listProviders();
         unWatch();
       }
-    };
-    unWatch = this.$watch("shown", handler);
+    });
   },
   methods: {
     // wip
@@ -354,10 +357,10 @@ export default {
       }
       const vm = this;
       this.curProvider = provider;
-      return provider.enable().then(async (instance) => {
+      return provider.enable().then(async (instance: CIP30Instance) => {
         this.curInstance = instance;
         this.walletPkh = await this.renderPubKeyHash(instance);
-        return walletValue(instance).then((val) => {
+        return getWalletValue(instance).then((val) => {
           console.log("Wallet balance", val)
           let assetList: Array<any> = [];
           for (let policy in val.multiassets) {

@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-import type { CIP30Instance } from "@/types";
+import type { CIP30Instance, CIP30Provider, WalletValue } from "@/types";
 import { Buffer } from "buffer";
 
 export async function signAndSubmit(provider: CIP30Instance, _tx: string) {
@@ -125,20 +125,19 @@ export async function signAndSubmit(provider: CIP30Instance, _tx: string) {
   return provider.submitTx(signedTxString);
 }
 
-export function listProviders() {
+export function listProviders(): CIP30Provider[] {
   if (!window.cardano) {
     return [];
   }
-
   const pluginMap = new Map();
-  Object.keys(window.cardano).forEach((x) => {
+  Object.keys(window.cardano).forEach((x: string) => {
     const plugin = window.cardano[x];
     if (plugin.enable && plugin.name) {
       pluginMap.set(plugin.name, plugin);
     }
   });
-  const providers = Array.from(pluginMap.values());
-  console.log("Provides", providers);
+  const providers: CIP30Provider[] = Array.from(pluginMap.values());
+  console.log("Providers", providers);
   return providers;
 }
 
@@ -147,7 +146,7 @@ export async function callKuberAndSubmit(
   data: string
 ) {
   let network = await provider.getNetworkId();
-  console.log("Current Network :", network);
+  console.log("Current Network:", network);
   let kuberUrlByNetwork = kuberApiUrl;
 
   return fetch(
@@ -248,63 +247,112 @@ export async function calculatePolicyHash(script: any): Promise<string> {
     });
 }
 
-export async function walletValue(provider: CIP30Instance): Promise<any> {
-  const utxos: TransactionUnspentOutput[] = (await provider.getUtxos()).map(
-    (u) => TransactionUnspentOutput.from_bytes(Buffer.from(u, "hex"))
-  );
+function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
   const assets: Map<ScriptHash, Map<AssetName, BigNum>> = new Map();
-  let adaVal: BigNum = BigNum.zero();
-
-  utxos.forEach((utxo) => {
-    const value: Value = utxo.output().amount();
-    adaVal = adaVal.checked_add(value.coin());
-
-    if (value.multiasset()) {
-      const multiAssets: ScriptHashes = value.multiasset().keys();
-      for (let j = 0; j < multiAssets.len(); j++) {
-        const policy: ScriptHash = multiAssets.get(j);
-        const policyAssets: Assets = value.multiasset().get(policy);
-        const assetNames: AssetNames = policyAssets.keys();
-        let assetNameMap;
-        // assets.get(policy); -- doesn't seem to do anything...
-        if (!assetNameMap) {
-          assets.set(policy, (assetNameMap = new Map()));
-        }
-        for (let k = 0; k < assetNames.len(); k++) {
-          const policyAsset: AssetName = assetNames.get(k);
-          let quantity = policyAssets.get(policyAsset);
-          const oldQuantity: BigNum = assetNameMap.get(policyAsset);
-          if (oldQuantity) {
-            quantity = oldQuantity.checked_add(quantity);
-          }
-          assetNameMap.set(policyAsset, quantity);
-        }
+  if (value.multiasset()) {
+    const multiAssets: ScriptHashes = value.multiasset().keys();
+    for (let j = 0; j < multiAssets.len(); j++) {
+      const policy: ScriptHash = multiAssets.get(j);
+      const policyAssets: Assets = value.multiasset().get(policy);
+      const assetNames: AssetNames = policyAssets.keys();
+      const assetNameMap = new Map();
+      assets.set(policy, assetNameMap);
+      for (let k = 0; k < assetNames.len(); k++) {
+        const policyAsset: AssetName = assetNames.get(k);
+        const oldQ = assetNameMap.get(policyAsset);
+        const newQ = policyAssets.get(policyAsset);
+        assetNameMap.set(policyAsset, oldQ ? oldQ.checked_add(newQ) : newQ);
       }
     }
-  });
-  const assetObj = {};
-  assets.forEach((k: Map<AssetName, BigNum>, v: ScriptHash) => {
-    const policy = Buffer.from(v.to_bytes()).toString("hex");
-    let policyMap;
-    if (assetObj[policy]) {
-      policyMap = assetObj[policy];
-    } else {
-      policyMap = {};
-      assetObj[policy] = policyMap;
-    }
-
-    k.forEach((q: BigNum, a: AssetName) => {
-      const assetName = Buffer.from(a.name());
-      policyMap[assetName.toString("hex")] = BigInt(q.to_str());
-    });
-  });
-  console.log("policymap", assetObj);
-
-  return {
-    lovelace: BigInt(adaVal.to_str()),
-    multiassets: assetObj,
-  };
+  }
+  return assets;
 }
+
+export async function getWalletValue(
+  provider: CIP30Instance
+): Promise<WalletValue> {
+  const utxos: TransactionUnspentOutput[] = (await provider.getUtxos()).map(
+    (u: string) => TransactionUnspentOutput.from_bytes(Buffer.from(u, "hex"))
+  );
+  const walletVal = utxos.reduce(
+    (walletVal: {lovelace: BigNum, multiassets: any}, utxo: TransactionUnspentOutput) => {
+      const value: Value = utxo.output().amount();
+      // update total lovelace
+      const lovelace = walletVal.lovelace.checked_add(value.coin());
+      // add multiassets
+      const multiassets = { ...walletVal.multiassets };
+      makeAssetsMap(value).forEach(
+        (assetNameMap: Map<AssetName, BigNum>, scriptHash: ScriptHash) => {
+          const policy: string = Buffer.from(scriptHash.to_bytes()).toString(
+            "hex"
+          );
+          multiassets[policy] = multiassets[policy] || {};
+          assetNameMap.forEach((q: BigNum, a: AssetName) => {
+            const assetName: string = Buffer.from(a.name()).toString("hex");
+            multiassets[policy][assetName] = BigInt(q.to_str());
+          });
+        }
+      );
+      console.log("multiassets", multiassets);
+      return { lovelace, multiassets };
+    },
+    { lovelace: BigNum.zero(), multiassets: {} }
+  );
+  // convert lovelace to bigint
+  return { ...walletVal, lovelace: BigInt(walletVal.lovelace.to_str()) };
+}
+
+// utxos.forEach((utxo: TransactionUnspentOutput) => {
+//   const value: Value = utxo.output().amount();
+// adaVal = adaVal.checked_add(value.coin());
+// if (value.multiasset()) {
+//   const multiAssets: ScriptHashes = value.multiasset().keys();
+
+//   for (let j = 0; j < multiAssets.len(); j++) {
+//     const policy: ScriptHash = multiAssets.get(j);
+//     const policyAssets: Assets = value.multiasset().get(policy);
+//     const assetNames: AssetNames = policyAssets.keys();
+
+// let assetNameMap
+// assets.get(policy)
+// if (!assetNameMap) {
+// assets.set(policy, assetNameMap = new Map());
+// }
+
+// for (let k = 0; k < assetNames.len(); k++) {
+//   const policyAsset: AssetName = assetNames.get(k);
+// let quantity = policyAssets.get(policyAsset);
+// const oldQuantity: BigNum = assetNameMap.get(policyAsset);
+// if (oldQuantity) {
+//   quantity = oldQuantity.checked_add(quantity);
+// }
+// assetNameMap.set(policyAsset, quantity)
+// }
+// }
+//   }
+// });
+// const assetObj = {};
+// assets.forEach((k: Map<AssetName, BigNum>, v: ScriptHash) => {
+//   const policy: string = Buffer.from(v.to_bytes()).toString("hex");
+//   let policyMap;
+//   if (assetObj[policy]) {
+//     policyMap = assetObj[policy];
+//   } else {
+//     policyMap = {};
+//     assetObj[policy] = policyMap;
+//   }
+
+//   k.forEach((q: BigNum, a: AssetName) => {
+//     const assetName: string = Buffer.from(a.name()).toString("hex");
+//     policyMap[assetName] = BigInt(q.to_str());
+//   });
+// });
+// console.log("policymap", assetObj);
+
+// return {
+//   lovelace: BigInt(adaVal),
+//   multiassets: assetObj,
+// };
 
 export function decodeAssetName(asset: string) {
   try {
@@ -319,12 +367,13 @@ export function renderLovelace(l: bigint | number): number {
   return l && parseFloat((l / BigInt(10000)).toString()) / 100;
 }
 
-export function transformNftImageUrl(url: string) {
+export function transformNftImageUrl(url: string): string {
   if (!url) {
     return null;
   }
+  console.log(url)
   const result = /^([a-zA-Z0-9+]+):\/\/(.+)/.exec(url);
-  if (result[1] && (result[1] == "ipfs" || result[1] == "ipns")) {
+  if (result && result[1] && (result[1] == "ipfs" || result[1] == "ipns")) {
     return "https://ipfs.io/" + result[1] + "/" + result[2];
   }
   return url;

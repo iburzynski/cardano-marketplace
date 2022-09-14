@@ -1,3 +1,5 @@
+import type { BigNum } from "@emurgo/cardano-serialization-lib-asmjs";
+
 export type HexString = string;
 
 export interface CIP30Provider {
@@ -18,4 +20,9 @@ export interface CIP30Instance {
   getUsedAddresses: () => Promise<Array<HexString>>;
   getUtxos: () => Promise<Array<HexString>>;
   getCollateral: () => Promise<Array<HexString>>;
+}
+
+export interface WalletValue {
+  lovelace: bigint;
+  multiassets: object;
 }
