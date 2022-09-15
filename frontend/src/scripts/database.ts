@@ -1,3 +1,7 @@
+// import type { UTXO } from "@/types";
+
+import type { DatabaseUTXO } from "@/types";
+
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     try {
@@ -30,7 +34,7 @@ export function openDB(): Promise<IDBDatabase> {
 
         // Use transaction oncomplete to make sure the objectStore creation is
         // finished before adding data into it.
-        objectStore.transaction.oncomplete = (event) => {
+        objectStore.transaction.oncomplete = () => {
           Promise.resolve(db);
         };
       };
@@ -41,14 +45,14 @@ export function openDB(): Promise<IDBDatabase> {
 }
 export function saveUtxos(
   db: IDBDatabase | undefined | null,
-  objects: Array<any>
+  objects: DatabaseUTXO[]
 ): Promise<any> {
   if (!db) {
     return Promise.reject("Null db instance");
   }
   return new Promise((resolve, reject): void => {
     console.log("Starting to save");
-    let trans: IDBTransaction = db.transaction("utxoContent", "readwrite");
+    const trans: IDBTransaction = db.transaction("utxoContent", "readwrite");
     trans.oncomplete = () => {
       resolve(objects);
     };
@@ -57,10 +61,10 @@ export function saveUtxos(
       reject("Error");
     };
 
-    let store = trans.objectStore("utxoContent");
-    objects.forEach((x) => {
-      console.log("putting", x);
-      store.put(x);
+    const store = trans.objectStore("utxoContent");
+    objects.forEach((utxo) => {
+      console.log("putting", utxo);
+      store.put(utxo);
     });
     trans.commit();
   });
@@ -69,16 +73,16 @@ export function getReadHandle(db: IDBDatabase): IDBObjectStore {
   const trans = db.transaction("utxoContent");
   return trans.objectStore("utxoContent");
 }
-export function getUtxo(handle: IDBObjectStore, id) {
+export function getUtxo(handle: IDBObjectStore, id: string): Promise<DatabaseUTXO> {
   if (!handle) {
-    return Promise.reject(" Null Object store handle");
+    return Promise.reject("Null Object store handle");
   }
   return new Promise((resolve, reject) => {
-    var request = handle.get(id);
+    const request = handle.get(id);
     request.onerror = (event) => {
       reject(event);
     };
-    request.onsuccess = (event) => {
+    request.onsuccess = () => {
       // Do something with the request.result!
       console.log("returning from db", request.result);
       if (request.result) resolve(request.result);

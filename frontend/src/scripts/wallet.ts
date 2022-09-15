@@ -29,16 +29,27 @@ declare global {
   }
 }
 
-import type { CIP30Instance, CIP30Provider, WalletValue } from "@/types";
+import type {
+  CIP30Instance,
+  CIP30Provider,
+  HexString,
+  Script,
+  WalletValue,
+} from "@/types";
 import { Buffer } from "buffer";
 
-export async function signAndSubmit(provider: CIP30Instance, _tx: string) {
-  let tx: Transaction;
+export async function signAndSubmit(
+  provider: CIP30Instance,
+  _tx: string
+): Promise<any> {
+  // let tx: Transaction;
   try {
-    tx = Transaction.from_bytes(Uint8Array.from(Buffer.from(_tx, "hex")));
+    const txDraft1 = Transaction.from_bytes(
+      Uint8Array.from(Buffer.from(_tx, "hex"))
+    );
 
-    if (tx.auxiliary_data()) {
-      const _txBody = tx.body();
+    if (txDraft1.auxiliary_data()) {
+      const _txBody = txDraft1.body();
       // create new tx body
       const txBody = TransactionBody.new(
         _txBody.inputs(),
@@ -46,7 +57,9 @@ export async function signAndSubmit(provider: CIP30Instance, _tx: string) {
         _txBody.fee(),
         _txBody.ttl()
       );
-      txBody.set_auxiliary_data_hash(hash_auxiliary_data(tx.auxiliary_data()));
+      txBody.set_auxiliary_data_hash(
+        hash_auxiliary_data(txDraft1.auxiliary_data())
+      );
       [
         "collateral",
         "mint",
@@ -69,74 +82,80 @@ export async function signAndSubmit(provider: CIP30Instance, _tx: string) {
       // if (_txBody.network_id()) {
       //   txBody.set_network_id(_txBody.network_id());
       // }
-      tx = Transaction.new(txBody, tx.witness_set(), tx.auxiliary_data());
+      const txDraft2 = Transaction.new(
+        txBody,
+        txDraft1.witness_set(),
+        txDraft1.auxiliary_data()
+      );
+
+      const witnessSet = TransactionWitnessSet.new();
+      ["plutus_data", "plutus_scripts", "redeemers", "native_scripts"].forEach(
+        (m: string): void => {
+          const w = txDraft2.witness_set()[m]();
+          if (w) witnessSet["set_" + m](w);
+        }
+      );
+      // if (tx.witness_set().plutus_data())
+      //   newWitnessSet.set_plutus_data(tx.witness_set().plutus_data());
+      // if (tx.witness_set().plutus_scripts())
+      //   newWitnessSet.set_plutus_scripts(tx.witness_set().plutus_scripts());
+      // if (tx.witness_set().redeemers())
+      //   newWitnessSet.set_redeemers(tx.witness_set().redeemers());
+      // if (tx.witness_set().native_scripts())
+      //   newWitnessSet.set_native_scripts(tx.witness_set().native_scripts());
+
+      // add the new witness.
+
+      const witnessesRaw: HexString = await provider.signTx(
+        Buffer.from(txDraft2.to_bytes()).toString("hex"),
+        true
+      );
+      const oldVkws: Vkeywitnesses = txDraft2.witness_set().vkeys()
+      const newVkws: Vkeywitnesses =
+        TransactionWitnessSet.from_bytes(Buffer.from(witnessesRaw, "hex")).vkeys();
+      if (oldVkws) {
+        const newVkeySet: Vkeywitnesses = Vkeywitnesses.new();
+        for (let i = 0; i < oldVkws.len(); i++) {
+          newVkeySet.add(oldVkws.get(i));
+        }
+        for (let i = 0; i < newVkws.len(); i++) {
+          newVkeySet.add(newVkws.get(i));
+        }
+        witnessSet.set_vkeys(newVkeySet);
+      } else {
+        witnessSet.set_vkeys(newVkws);
+      }
+      const signedTx = Transaction.new(
+        txDraft2.body(),
+        witnessSet,
+        txDraft2.auxiliary_data()
+      );
+      const signedTxString: HexString = Buffer.from(
+        signedTx.to_bytes()
+      ).toString("hex");
+      // @ts-ignore
+      console.log({
+        additionWitnessSet: witnessesRaw,
+        finalTx: signedTxString,
+      });
+      return provider.submitTx(signedTxString);
     }
   } catch (e: any) {
     throw new Error("Invalid transaction string:" + e.message);
   }
-
-  const newWitnessSet = TransactionWitnessSet.new();
-  ["plutus_data", "plutus_scripts", "redeemers", "native_scripts"].forEach(
-    (m) => {
-      const w = tx.witness_set()[m]();
-      if (w) newWitnessSet["set_" + m](w);
-    }
-  );
-  // if (tx.witness_set().plutus_data())
-  //   newWitnessSet.set_plutus_data(tx.witness_set().plutus_data());
-  // if (tx.witness_set().plutus_scripts())
-  //   newWitnessSet.set_plutus_scripts(tx.witness_set().plutus_scripts());
-  // if (tx.witness_set().redeemers())
-  //   newWitnessSet.set_redeemers(tx.witness_set().redeemers());
-  // if (tx.witness_set().native_scripts())
-  //   newWitnessSet.set_native_scripts(tx.witness_set().native_scripts());
-
-  // add the new witness.
-
-  const witnessesRaw = await provider.signTx(
-    Buffer.from(tx.to_bytes()).toString("hex"),
-    true
-  );
-  const newWitnesses = TransactionWitnessSet.from_bytes(
-    Buffer.from(witnessesRaw, "hex")
-  );
-
-  if (tx.witness_set().vkeys()) {
-    const newVkeySet = Vkeywitnesses.new();
-
-    for (let i = 0; i < tx.witness_set().vkeys().len(); i++) {
-      newVkeySet.add(tx.witness_set().vkeys().get(i));
-    }
-
-    for (let i = 0; i < newWitnesses.vkeys().len(); i++) {
-      newVkeySet.add(newWitnesses.vkeys().get(i));
-    }
-    newWitnessSet.set_vkeys(newVkeySet);
-  } else {
-    newWitnessSet.set_vkeys(newWitnesses.vkeys());
-  }
-  tx = Transaction.new(tx.body(), newWitnessSet, tx.auxiliary_data());
-  const signedTxString = Buffer.from(tx.to_bytes()).toString("hex");
-  // @ts-ignore
-  console.log({
-    additionWitnessSet: witnessesRaw,
-    finalTx: signedTxString,
-  });
-  return provider.submitTx(signedTxString);
 }
 
 export function listProviders(): CIP30Provider[] {
   if (!window.cardano) {
     return [];
   }
-  const pluginMap = new Map();
-  Object.keys(window.cardano).forEach((x: string) => {
-    const plugin = window.cardano[x];
-    if (plugin.enable && plugin.name) {
-      pluginMap.set(plugin.name, plugin);
-    }
-  });
-  const providers: CIP30Provider[] = Array.from(pluginMap.values());
+  const providers = Object.keys(window.cardano).reduce(
+    (ps: CIP30Provider[], k: string) => {
+      const plugin = window.cardano[k];
+      return plugin.enable && plugin.name ? [...ps, plugin] : ps;
+    },
+    []
+  );
   console.log("Providers", providers);
   return providers;
 }
@@ -145,9 +164,9 @@ export async function callKuberAndSubmit(
   provider: CIP30Instance,
   data: string
 ) {
-  let network = await provider.getNetworkId();
+  const network = await provider.getNetworkId();
   console.log("Current Network:", network);
-  let kuberUrlByNetwork = kuberApiUrl;
+  const kuberUrlByNetwork = kuberApiUrl;
 
   return fetch(
     // eslint-disable-next-line max-len
@@ -163,45 +182,45 @@ export async function callKuberAndSubmit(
       console.error(`${kuberUrlByNetwork}/api/v1/tx`, e);
       throw Error(`Kubær API call: ` + e.message);
     })
-    .then((res) => {
+    .then(async (res) => {
       if (res.status === 200) {
-        return res.json().then((json) => {
-          console.log(json);
-          return signAndSubmit(provider, json.tx).catch((e) => {
-            if (e.info && e.code) {
-              throw Error(`Code: ${e.code} :: \n ${e.info}`);
-            } else throw e;
-          });
-        });
+        const json = await res.json();
+        console.log(json);
+        try {
+          return await signAndSubmit(provider, json.tx);
+        } catch (e) {
+          if (e.info && e.code) {
+            throw Error(`Code: ${e.code} :: \n ${e.info}`);
+          } else throw e;
+        }
       } else {
-        return res.text().then((txt) => {
-          let json: any;
-          try {
-            json = JSON.parse(txt);
-          } catch (e) {
-            return Promise.reject(
-              Error(`KubærApi [Status ${res.status}]: ${txt}`)
-            );
-          }
-          if (json) {
-            return Promise.reject(
-              Error(
-                `KubærApi [Status ${res.status}]: ${
-                  json.message ? json.message : txt
-                }`
-              )
-            );
-          } else {
-            return Promise.reject(
-              Error(`KubærApi [Status ${res.status}]: ${txt}`)
-            );
-          }
-        });
+        const txt = await res.text();
+        let json_1: any;
+        try {
+          json_1 = JSON.parse(txt);
+        } catch (e_1) {
+          return Promise.reject(
+            Error(`KubærApi [Status ${res.status}]: ${txt}`)
+          );
+        }
+        if (json_1) {
+          return Promise.reject(
+            Error(
+              `KubærApi [Status ${res.status}]: ${
+                json_1.message ? json_1.message : txt
+              }`
+            )
+          );
+        } else {
+          return Promise.reject(
+            Error(`KubærApi [Status ${res.status}]: ${txt}`)
+          );
+        }
       }
     });
 }
 
-export async function calculatePolicyHash(script: any): Promise<string> {
+export async function calculatePolicyHash(script: Script): Promise<string> {
   return fetch(
     // eslint-disable-next-line max-len
     `${kuberApiUrl}/api/v1/scriptPolicy`,
@@ -216,33 +235,32 @@ export async function calculatePolicyHash(script: any): Promise<string> {
       console.error(`${kuberApiUrl}/api/v1/tx`, e);
       throw Error(`Kubær API call: ` + e.message);
     })
-    .then((res) => {
+    .then(async (res) => {
       if (res.status === 200) {
         return res.text();
       } else {
-        return res.text().then((txt) => {
-          let json;
-          try {
-            json = JSON.parse(txt);
-          } catch (e) {
-            return Promise.reject(
-              Error(`KubærApi [Status ${res.status}]: ${txt}`)
-            );
-          }
-          if (json) {
-            return Promise.reject(
-              Error(
-                `KubærApi [Status ${res.status}]: ${
-                  json.message ? json.message : txt
-                }`
-              )
-            );
-          } else {
-            return Promise.reject(
-              Error(`KubærApi [Status ${res.status}]: ${txt}`)
-            );
-          }
-        });
+        const txt = await res.text();
+        let json;
+        try {
+          json = JSON.parse(txt);
+        } catch (e) {
+          return Promise.reject(
+            Error(`KubærApi [Status ${res.status}]: ${txt}`)
+          );
+        }
+        if (json) {
+          return Promise.reject(
+            Error(
+              `KubærApi [Status ${res.status}]: ${
+                json.message ? json.message : txt
+              }`
+            )
+          );
+        } else {
+          return Promise.reject(
+            Error(`KubærApi [Status ${res.status}]: ${txt}`)
+          );
+        }
       }
     });
 }
@@ -271,11 +289,10 @@ function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
 export async function getWalletValue(
   provider: CIP30Instance
 ): Promise<WalletValue> {
-  const utxos: TransactionUnspentOutput[] = (await provider.getUtxos()).map(
-    (u: string) => TransactionUnspentOutput.from_bytes(Buffer.from(u, "hex"))
-  );
+  const utxos: string[] = await provider.getUtxos();
   const walletVal = utxos.reduce(
-    (walletVal: {lovelace: BigNum, multiassets: any}, utxo: TransactionUnspentOutput) => {
+    (walletVal: { lovelace: BigNum; multiassets: object }, u: string) => {
+      const utxo = TransactionUnspentOutput.from_bytes(Buffer.from(u, "hex"));
       const value: Value = utxo.output().amount();
       // update total lovelace
       const lovelace = walletVal.lovelace.checked_add(value.coin());
@@ -371,7 +388,6 @@ export function transformNftImageUrl(url: string): string {
   if (!url) {
     return null;
   }
-  console.log(url)
   const result = /^([a-zA-Z0-9+]+):\/\/(.+)/.exec(url);
   if (result && result[1] && (result[1] == "ipfs" || result[1] == "ipns")) {
     return "https://ipfs.io/" + result[1] + "/" + result[2];

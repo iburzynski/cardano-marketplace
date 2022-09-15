@@ -26,3 +26,51 @@ export interface WalletValue {
   lovelace: bigint;
   multiassets: object;
 }
+
+export interface Script {
+  type: string;
+  keyHash: string;
+}
+
+export type UTXO = BlockfrostUTXO | DatabaseUTXO;
+
+export interface BlockfrostUTXO {
+  amount: { quantity: string; unit: string }[];
+  assetName: string;
+  policy: string;
+  data_hash: string;
+  nft: string;
+  id: string;
+  tx_hash: string;
+  tx_index: string;
+}
+
+export interface DatabaseUTXO {
+  // utxo: string;
+  datum: any;
+  data_hash: string;
+  metadata: {
+    artist: string;
+    copyright: string;
+    description: string;
+    image: string;
+    name: string;
+  };
+  nft: string;
+  tx_hash: string;
+  tx_index: string;
+}
+
+export interface AssetDetail {
+  asset: string;
+  asset_name: string;
+  onchain_metadata: {
+    artist: string;
+    copyright: string;
+    description: any;
+    image: string;
+    name: string;
+  };
+}
+
+export type Datum = string;
