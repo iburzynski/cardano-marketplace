@@ -2,12 +2,10 @@
 import { VAceEditor } from "vue3-ace-editor";
 import ace from "ace-builds";
 import workerJsonUrl from "ace-builds/src-noconflict/mode-json";
-import type { BfUTXO, CIP30Instance, CIP30Provider, DbUTXO } from "@/types";
-import { Buffer } from "buffer";
+import type { BfUTXO, DbUTXO, ListingState } from "@/types";
 import { listMarketUtxos } from "@/scripts/blockfrost";
-import { callKuberAndSubmit, renderLovelace } from "@/scripts/wallet";
-import { market } from "@/config";
-import { BaseAddress, Ed25519KeyHash, StakeCredential } from "@emurgo/cardano-serialization-lib-asmjs";
+import { renderLovelace } from "@/scripts/wallet";
+import { buyHandler } from "@/scripts/transaction";
 import { walletAction } from "@/scripts/sotre"
 import { convertUtxos } from "@/scripts/database";
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
@@ -34,7 +32,7 @@ ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
           </div> <!-- /name -->
           <div v-if="utxo.metadata.copyright || utxo.metadata.description" class="nft__metadata__extra">
             <div v-if="utxo.metadata.description" class="nft__metadata__description text-gray-500">
-              {{ mapDescription(utxo.metadata.description) }}
+              {{ utxo.metadata.description }}
             </div> <!-- /description -->
             <div v-if="utxo.metadata.copyright" class="nft__metadata__copyright text-gray-500"> Copyright:
               {{ utxo.metadata.copyright }}
@@ -57,9 +55,9 @@ ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 export default {
   async created() {
     try {
-      const mUs: BfUTXO[] = await listMarketUtxos()
-      // Retrieve market utxos from db or fetch data from Blockfrost and save to db
-      this.utxos = await convertUtxos(mUs)
+      const marketUtxos: BfUTXO[] = await listMarketUtxos()
+      // Retrieve utxos from db or fetch data from Blockfrost and save to db
+      this.utxos = await convertUtxos(marketUtxos)
       if (this.utxos.length == 0) {
         this.message = "Marketplace is empty"
       }
@@ -72,63 +70,23 @@ export default {
     }
   },
   computed: {},
-  data() {
-    const providers: Array<CIP30Provider> = [];
-
+  data(): ListingState {
     return {
       message: "Loading ...",
       hasIndexDb: false,
       utxos: [],
-      providers: providers,
+      providers: [],
       addSelections: true,
       interval: 0,
       timeout: 0,
     };
   },
   methods: {
-    mapDescription(desc: Array<string> | string) {
-      return Array.isArray(desc) ? desc.join('') : desc
-    },
-    async buy(utxo: DbUTXO) {
-      console.log(utxo)
-      const datum = utxo.datum
-      const cost = datum.fields[1].int;
-      const sellerPubKeyHashHex = datum.fields[0].fields[0].fields[0].bytes
-      const sellerStakeKeyHashHex = datum.fields[0].fields[1].fields[0].bytes
-      const vkey = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(Buffer.from(sellerPubKeyHashHex, "hex")))
-      const stakeKey = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(Buffer.from(sellerStakeKeyHashHex, "hex")))
-      const sellerAddr = BaseAddress.new(0, vkey, stakeKey)
-      console.log("SellerAddr", sellerAddr.to_address().to_bech32())
-
-      walletAction.callback = async (provider: CIP30Instance) => {
-        const request = {
-          selections: await provider.getUtxos(),
-          inputs: [
-            {
-              address: market.address,
-              utxo: {
-                "hash": utxo.tx_hash,
-                "index": utxo.tx_index
-              },
-              script: market.script,
-              // upstream comment:
-              // value: `2A + ${nft.policy}.${nft.asset_name}`,
-              datum: datum,
-              redeemer: { fields: [], constructor: 0 },
-            },
-          ],
-          outputs: [
-            {
-              address: sellerAddr.to_address().to_bech32("addr_test"),
-              value: cost
-            }
-          ],
-        };
-        return callKuberAndSubmit(provider, JSON.stringify(request))
-      }
+    buy(utxo: DbUTXO): void {
+      walletAction.callback = buyHandler(utxo)
       walletAction.enable = true
     },
-    save(v: string) {
+    save(v: string): void {
       localStorage.setItem("editor.content", v);
     },
   },
@@ -137,6 +95,7 @@ export default {
   },
 };
 </script>
+
 <style>
 @import "../assets/base.css";
 </style>

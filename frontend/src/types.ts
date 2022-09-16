@@ -1,5 +1,3 @@
-import type { BigNum } from "@emurgo/cardano-serialization-lib-asmjs";
-
 export type HexString = string;
 
 export interface CIP30Provider {
@@ -25,6 +23,12 @@ export interface CIP30Instance {
 export interface WalletValue {
   lovelace: bigint;
   multiassets: object;
+}
+
+export interface WalletAction {
+  enable: boolean,
+  callback: (provider: CIP30Instance) => Promise<any>,
+  message: string
 }
 
 export interface Script {
@@ -72,4 +76,14 @@ export interface NftMetadata {
     description: any;
     image: string;
     name: string;
+}
+
+export interface ListingState {
+  message: string,
+  hasIndexDb: boolean,
+  utxos: DbUTXO[],
+  providers: CIP30Provider[],
+  addSelections: boolean,
+  interval: number,
+  timeout: number,
 }

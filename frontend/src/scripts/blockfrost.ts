@@ -8,6 +8,10 @@ export async function listMarketUtxos() {
   );
 }
 
+function renderDescription(desc: Array<string> | string) {
+  return Array.isArray(desc) ? desc.join('') : desc
+}
+
 export async function getNftMetadata(nft: string): Promise<NftMetadata> {
   const res = await getBlockfrost("/assets/" + nft);
   const md = res.onchain_metadata || {}
@@ -18,7 +22,7 @@ export async function getNftMetadata(nft: string): Promise<NftMetadata> {
   return {
     artist: "artist" in md ? md.artist : "",
     copyright: "copyright" in md ? md.copyright : "",
-    description: "description" in md ? md.description : "",
+    description: "description" in md ? renderDescription(md.description) : "",
     image: "image" in md ? transformNftImageUrl(md.image) : "",
     name: "name" in md ? md.name : "",
   };
