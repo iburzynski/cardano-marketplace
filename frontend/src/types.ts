@@ -32,12 +32,12 @@ export interface Script {
   keyHash: string;
 }
 
-export type UTXO = BlockfrostUTXO | DatabaseUTXO;
+// export type UTXO = BfUTXO | DbUTXO;
 
-export interface BlockfrostUTXO {
+export interface BfUTXO {
   amount: { quantity: string; unit: string }[];
   assetName: string;
-  policy: string;
+  // policy: string;
   data_hash: string;
   nft: string;
   id: string;
@@ -45,10 +45,13 @@ export interface BlockfrostUTXO {
   tx_index: string;
 }
 
-export interface DatabaseUTXO {
-  // utxo: string;
-  datum: any;
-  data_hash: string;
+export type Datum =
+  | { constructor: number; fields: Datum[] }
+  | { constructor: number; fields: { int: number } }
+  | { constructor: number; fields: { bytes: string } };
+
+export interface DbUTXO {
+  datum: Datum;
   metadata: {
     artist: string;
     copyright: string;
@@ -61,16 +64,12 @@ export interface DatabaseUTXO {
   tx_index: string;
 }
 
-export interface AssetDetail {
-  asset: string;
-  asset_name: string;
-  onchain_metadata: {
+export type SettledDbUTXO = PromiseSettledResult<DbUTXO>
+
+export interface NftMetadata {
     artist: string;
     copyright: string;
     description: any;
     image: string;
     name: string;
-  };
 }
-
-export type Datum = string;

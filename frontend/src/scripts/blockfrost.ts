@@ -1,5 +1,6 @@
 import { blockfrost, market } from "@/config";
-import type { AssetDetail, Datum } from "@/types";
+import type { Datum, NftMetadata } from "@/types";
+import { transformNftImageUrl } from "./wallet";
 
 export async function listMarketUtxos() {
   return await getBlockfrost(
@@ -7,17 +8,24 @@ export async function listMarketUtxos() {
   );
 }
 
-export async function getAssetDetail(asset: string): Promise<AssetDetail> {
-  const result = await getBlockfrost("/assets/" + asset);
+export async function getNftMetadata(nft: string): Promise<NftMetadata> {
+  const res = await getBlockfrost("/assets/" + nft);
+  const md = res.onchain_metadata || {}
   // const props = ["onchain_metadata"]
   // return props.reduce((res, p) => {
   //   return {...res, p: result[p]}
   // }, {})
-  return result
+  return {
+    artist: "artist" in md ? md.artist : "",
+    copyright: "copyright" in md ? md.copyright : "",
+    description: "description" in md ? md.description : "",
+    image: "image" in md ? transformNftImageUrl(md.image) : "",
+    name: "name" in md ? md.name : "",
+  };
 }
 
 export async function getDatum(hash: string): Promise<Datum> {
-  const response = await getBlockfrost("/scripts/datum/" + hash)
+  const response = await getBlockfrost("/scripts/datum/" + hash);
   return response.json_value;
 }
 
@@ -49,30 +57,29 @@ async function getBlockfrost(path: string): Promise<any> {
     throw err;
   }
 }
-    // return res.text().then((txt) => {
-    //   let err;
-    //   let json: any;
-    //   try {
-    //     json = JSON.parse(txt);
-    //     if (json) {
-    //       err = Error(
-    //         `BlockfrostApi [Status ${res.status}]: ${
-    //           json.message ? json.message : txt
-    //         }`
-    //       );
-    //       err.json = json;
-    //     } else {
-    //       err = Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
-    //       err.text = txt;
-    //     }
-    //   } catch (e) {
-    //     err = Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
-    //     err.text = txt;
-    //   }
-    //   err.response = res;
-    //   err.url = url;
-    //   err.status_code = res.status;
-    //   throw err;
-    // });
-    // }
-
+// return res.text().then((txt) => {
+//   let err;
+//   let json: any;
+//   try {
+//     json = JSON.parse(txt);
+//     if (json) {
+//       err = Error(
+//         `BlockfrostApi [Status ${res.status}]: ${
+//           json.message ? json.message : txt
+//         }`
+//       );
+//       err.json = json;
+//     } else {
+//       err = Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
+//       err.text = txt;
+//     }
+//   } catch (e) {
+//     err = Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
+//     err.text = txt;
+//   }
+//   err.response = res;
+//   err.url = url;
+//   err.status_code = res.status;
+//   throw err;
+// });
+// }

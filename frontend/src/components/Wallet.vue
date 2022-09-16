@@ -14,7 +14,7 @@ import {
   getWalletValue,
 } from "@/scripts/wallet";
 import type { CIP30Instance, CIP30Provider } from "@/types";
-import { getAssetDetail } from "@/scripts/blockfrost";
+import { getNftMetadata } from "@/scripts/blockfrost";
 import { walletState, walletAction } from "@/scripts/sotre";
 import { callKuberAndSubmit, transformNftImageUrl } from "@/scripts/wallet";
 import { market } from "@/config";
@@ -355,14 +355,13 @@ export default {
           alert("Error" + e.message);
         });
       }
-      const vm = this;
       this.curProvider = provider;
       return provider.enable().then(async (instance: CIP30Instance) => {
         this.curInstance = instance;
         this.walletPkh = await this.renderPubKeyHash(instance);
         return getWalletValue(instance).then((val) => {
           console.log("Wallet balance", val)
-          let assetList: Array<any> = [];
+          const assetList: Array<any> = [];
           for (let policy in val.multiassets) {
             const tokens = val.multiassets[policy];
             for (let token in tokens) {
@@ -379,11 +378,10 @@ export default {
           this.balance.lovelace = val.lovelace;
           this.balance.multiAssets = assetList;
           return Promise.all(
-            this.balance.multiAssets.map((v, i) => {
-              return getAssetDetail(v.asset).then((asset) => {
-                v.name = asset.onchain_metadata?.name;
-                v.image = transformNftImageUrl(asset.onchain_metadata?.image);
-              });
+            this.balance.multiAssets.map(async (v) => {
+              const nft_1 = await getNftMetadata(v.asset);
+              v.name = nft_1.name;
+              v.image = nft_1.image;
             })
           );
 
