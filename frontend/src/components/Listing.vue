@@ -6,7 +6,7 @@ import type { BfUTXO, DbUTXO, ListingState } from "@/types";
 import { listMarketUtxos } from "@/scripts/blockfrost";
 import { renderLovelace } from "@/scripts/wallet";
 import { buyHandler } from "@/scripts/transaction";
-import { walletAction } from "@/scripts/sotre"
+import { walletAction } from "@/scripts/state"
 import { convertUtxos } from "@/scripts/database";
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 </script>

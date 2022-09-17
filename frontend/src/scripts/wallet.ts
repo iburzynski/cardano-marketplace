@@ -38,6 +38,18 @@ import type {
 } from "@/types";
 import { Buffer } from "buffer";
 
+export async function renderPubKeyHash(providerInstance: CIP30Instance) {
+  const addresses: string[] = await providerInstance.getUsedAddresses();
+  const sellerAddr: BaseAddress = BaseAddress.from_address(
+    Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))
+  );
+  const sellerPkh: string = Buffer.from(
+    sellerAddr.payment_cred().to_keyhash().to_bytes()
+  ).toString("hex");
+  console.log("seller public key hash", typeof sellerPkh);
+  return sellerPkh;
+}
+
 export async function signAndSubmit(
   provider: CIP30Instance,
   _tx: string

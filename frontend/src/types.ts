@@ -26,9 +26,9 @@ export interface WalletValue {
 }
 
 export interface WalletAction {
-  enable: boolean,
-  callback: (provider: CIP30Instance) => Promise<any>,
-  message: string
+  enable: boolean;
+  callback: (provider: CIP30Instance) => Promise<any>;
+  message: string;
 }
 
 export interface Script {
@@ -68,22 +68,52 @@ export interface DbUTXO {
   tx_index: string;
 }
 
-export type SettledDbUTXO = PromiseSettledResult<DbUTXO>
+export type SettledDbUTXO = PromiseSettledResult<DbUTXO>;
 
 export interface NftMetadata {
-    artist: string;
-    copyright: string;
-    description: any;
-    image: string;
-    name: string;
+  artist: string;
+  copyright: string;
+  description: any;
+  image: string;
+  name: string;
+}
+
+export interface MultiAssetObj {
+  tokenName: string;
+  policy: string;
+  asset: string;
+  sellInput: boolean;
+  name: string;
+  image: string;
 }
 
 export interface ListingState {
-  message: string,
-  hasIndexDb: boolean,
-  utxos: DbUTXO[],
-  providers: CIP30Provider[],
-  addSelections: boolean,
-  interval: number,
-  timeout: number,
+  message: string;
+  hasIndexDb: boolean;
+  utxos: DbUTXO[];
+  providers: CIP30Provider[];
+  addSelections: boolean;
+  interval: number;
+  timeout: number;
+}
+
+export interface WalletState {
+  prompt: string;
+  providers: CIP30Provider[];
+  curProvider: CIP30Provider;
+  walletPkh: string;
+  // curInstance: CIP30Instance;
+  sellAmount: string;
+  showToast: boolean;
+  lastSalePrompt: number;
+  balance: {
+    lovelace: bigint;
+    multiAssets: MultiAssetObj[];
+  };
+}
+
+export interface MintFormData {
+  tokenName: string,
+  artist: string,
+  imageUrl: string
 }

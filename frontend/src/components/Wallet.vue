@@ -8,22 +8,22 @@ import {
   TransitionRoot,
 } from "@headlessui/vue";
 import {
-  calculatePolicyHash,
   decodeAssetName,
   listProviders,
   getWalletValue,
+  renderPubKeyHash,
 } from "@/scripts/wallet";
-import type { CIP30Instance, CIP30Provider } from "@/types";
+import type { CIP30Instance, CIP30Provider, WalletState } from "@/types";
 import { getNftMetadata } from "@/scripts/blockfrost";
-import { walletState, walletAction } from "@/scripts/sotre";
-import { callKuberAndSubmit, transformNftImageUrl } from "@/scripts/wallet";
+import { walletState, walletAction, showMint, curInstance } from "@/scripts/state";
+import { callKuberAndSubmit } from "@/scripts/wallet";
 import { market } from "@/config";
 import {
   Address,
-  BaseAddress,
-  ScriptPubkey,
+  BaseAddress
 } from "@emurgo/cardano-serialization-lib-asmjs";
-import type { WatchCallback, WatchStopHandle } from "vue";
+import type { WatchStopHandle } from "vue";
+import MintForm from "./MintForm.vue"
 </script>
 
 <template>
@@ -78,32 +78,7 @@ import type { WatchCallback, WatchStopHandle } from "vue";
                       {{ prompt }}
                     </DialogTitle>
                   </div>
-                  <div v-if="showMint" class="align-bottom text-blue-900 border-b-2  border-blue-700 pb-5 mb-5 px-4">
-                    <div>
-
-                      <form id="mint-form" class="fade ani">
-                        <input name="tokenName"
-                          class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-                          placeholder="Unique Token Name" maxlength="64" />
-                        <input name="artist"
-                          class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-                          placeholder="Artist" maxlength="64" />
-                        <input name="imageUrl"
-                          class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-                          placeholder="Image url" maxlength="64" />
-                      </form>
-                      <div class="flex w-full justify-between gap-4">
-                        <button type="button" @click="mintToken"
-                          class="w-full border-2 border-indigo-500 cursor-pointer hover:bg-indigo-500 hover:text-white hover:border-indigo-600 active:ring-indigo-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-indigo-500">
-                          Mint
-                        </button>
-                        <button type="button" @click="cancelMint"
-                          class="w-full border-2 border-red-500 cursor-pointer hover:bg-red-500 hover:text-white hover:border-red-600 active:ring-red-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-red-500">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <MintForm />
                   <div class="relative   sm:px-6">
 
                     <div v-if="walletAction.enable || !curProvider">
@@ -170,17 +145,16 @@ import type { WatchCallback, WatchStopHandle } from "vue";
 <script lang="ts">
 
 export default {
-  data() {
+  data(): WalletState {
     return {
-      showMint: false,
       prompt: "Connect Wallet",
       providers: null,
       curProvider: null,
       walletPkh: null,
-      curInstance: null,
+      // curInstance: curInstance.value,
       sellAmount: "",
-      showToast: false,
-      lastSalePrompt: 0,
+      showToast: false, // unused!
+      lastSalePrompt: 0, // unused!
       balance: {
         lovelace: BigInt(0),
         multiAssets: [],
@@ -192,7 +166,7 @@ export default {
       return walletAction.enable || walletState.value;
     },
   },
-  mounted() {
+  mounted(): void {
     // const handler: WatchCallback = (newVal, oldVal) => {
     //   if (newVal !== oldVal) {
     //     this.providers = listProviders();
@@ -207,76 +181,6 @@ export default {
     });
   },
   methods: {
-    // wip
-    async mintToken() {
-      const data: any = {};
-      Array.from(document.forms["mint-form"].elements).forEach((v: HTMLInputElement) => {
-        if (v.tagName == "INPUT") data[v.name] = v.value;
-      });
-      const tokenName = Buffer.from(data.tokenName, "utf-8").toString("hex");
-      const addresses = await this.curInstance.getUnusedAddresses().then((v) => {
-        if (v.length == 0) {
-          return this.curInstance.getUsedAddresses();
-        } else {
-          return v;
-        }
-      });
-      console.log("addresses", addresses);
-      const userAddr = BaseAddress.from_address(
-        Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))
-      );
-      const userPkh = Buffer.from(
-        userAddr.payment_cred().to_keyhash().to_bytes()
-      ).toString("hex");
-      const walletUtxos = await this.curInstance.getUtxos();
-      console.log({
-        userPkh: userPkh,
-        userAddr: userAddr,
-      });
-      return calculatePolicyHash({
-        type: "sig",
-        keyHash: userPkh,
-      })
-        .then((policyId: string) => {
-          console.log("policy", policyId);
-          const request: any = {
-            selections: walletUtxos,
-            mint: [
-              {
-                script: {
-                  type: "sig",
-                  keyHash: userPkh,
-                },
-                amount: {},
-              },
-            ],
-
-          };
-          request.mint[0].amount[tokenName] = 1;
-
-          if (data.imageUrl || data.artist) {
-            request.metadata = {
-              721: {},
-            },
-              request.metadata[721][policyId] = {};
-            request.metadata[721][policyId][data.tokenName] = {
-              name: data.tokenName,
-              image: data.imageUrl,
-              artist: data.artist,
-              mediaType: "image/jpeg",
-            };
-          }
-          return callKuberAndSubmit(this.curInstance, JSON.stringify(request));
-        })
-        .catch((e) => {
-          console.error(e);
-          alert(e);
-        });
-    },
-    // wip
-    cancelMint() {
-      this.showMint = false
-    },
     closeOverlay() {
       if (walletAction.enable) {
         walletAction.enable = false;
@@ -329,17 +233,7 @@ export default {
       };
       callKuberAndSubmit(providerInstance, JSON.stringify(body));
     },
-    async renderPubKeyHash(providerInstance: CIP30Instance) {
-      const addresses = await providerInstance.getUsedAddresses();
-      const sellerAddr = BaseAddress.from_address(
-        Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))
-      );
-      const sellerPkh = Buffer.from(
-        sellerAddr.payment_cred().to_keyhash().to_bytes()
-      ).toString("hex");
-      console.log("seller public key hash", typeof sellerPkh);
-      return sellerPkh;
-    },
+
     setInputValue(event) {
       this.sellAmount = event.target.value;
     },
@@ -357,8 +251,8 @@ export default {
       }
       this.curProvider = provider;
       return provider.enable().then(async (instance: CIP30Instance) => {
-        this.curInstance = instance;
-        this.walletPkh = await this.renderPubKeyHash(instance);
+        curInstance.value = instance;
+        this.walletPkh = await renderPubKeyHash(instance);
         return getWalletValue(instance).then((val) => {
           console.log("Wallet balance", val)
           const assetList: Array<any> = [];
@@ -393,8 +287,8 @@ export default {
       this.balance.lovelace = BigInt(0);
       this.balance.multiAssets = [];
       this.curProvider = null;
-      this.curInstance = null;
-      this.showMint = false
+      curInstance.value = null;
+      showMint.value = false
     },
   },
 };

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import Wallet from "./components/Wallet.vue"
-import { walletState } from "@/scripts/sotre";
+import { walletState } from "@/scripts/state";
 import { market } from "@/config"
 
 </script>

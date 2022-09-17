@@ -7,3 +7,5 @@ export const walletAction: WalletAction = reactive({
   callback: null,
   message: null,
 });
+export const curInstance = ref(null)
+export const showMint = ref(false)
