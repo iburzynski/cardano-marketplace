@@ -98,11 +98,6 @@ export interface MultiAssetObj {
   metadata: NftMetadata;
 }
 
-export type State = {
-  instance: null | CIP30Instance;
-  provider: null | CIP30Provider;
-}
-
 export interface ListingState {
   message: string;
   hasIndexDb: boolean;

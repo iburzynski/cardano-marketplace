@@ -17,12 +17,14 @@ import { walletState, walletAction } from "@/scripts/store";
 import { callKuberAndSubmit } from "@/scripts/wallet";
 import { makePubKeyHash, makeStakeKeyHash, getUsedAddr } from "@/scripts/transaction"
 import { market } from "@/config";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useStore } from "vuex";
 import MintForm from "./MintForm.vue"
 import { ActionTypes } from "@/store/actions";
+import { MutationType } from "@/store/mutations";
 
 const store = useStore()
+const showWallet = ref(false)
 const providers = listProviders()
 const balance: WalletBalance = {
   lovelace: BigInt(0),
@@ -43,11 +45,12 @@ const shown = computed((): boolean => {
   return walletAction.enable || walletState.value;
 })
 function closeOverlay(): void {
-  if (walletAction.enable) {
-    walletAction.enable = false;
-  } else {
-    walletState.value = false;
-  }
+  // if (walletAction.enable) {
+  //   walletAction.enable = false;
+  // } else {
+  //   walletState.value = false;
+  // }
+  store.commit(MutationType.ToggleWallet)
 }
 function showPriceInput(asset: MultiAssetObj, index: number) {
   asset.sellInput = true;
@@ -128,7 +131,7 @@ async function disconnectProvider() {
 
 <template>
   <!-- This example requires Tailwind CSS v2.0+ -->
-  <TransitionRoot as="template" :show="shown">
+  <TransitionRoot as="template" :show="store.getters.getShow">
     <Dialog as="div" class="relative z-10" @close="closeOverlay">
       <TransitionChild as="template" enter="ease-in-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
         leave="ease-in-out duration-300" leave-from="opacity-100" leave-to="opacity-0">
@@ -144,7 +147,7 @@ async function disconnectProvider() {
               <DialogPanel class="pointer-events-auto relative w-screen max-w-md">
                 <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
                   <div class="px-4 sm:px-6">
-                    <div v-if="!walletAction.enable && provider" class="flex">
+                    <div v-if="provider" class="flex">
                       <img v-if="provider.icon" class="inline-block align-bottom w-16 h-16 mr-2" :src="provider.icon" />
                       <img v-else class="inline-block align-bottom w-12 h-12" src="/cardano.png" />
                       <span class="inline-block w-full">
@@ -180,7 +183,7 @@ async function disconnectProvider() {
                   </div>
                   <div class="relative   sm:px-6">
 
-                    <div v-if="walletAction.enable || !provider">
+                    <div v-if="!provider">
                       <div v-if="providers?.length == 0">
                         <div class="text-gray-600 font-semibold my-10 text-center">
                           Please Install cardano wallet plugin

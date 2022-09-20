@@ -3,7 +3,9 @@ import { RouterView } from "vue-router";
 import Wallet from "./components/Wallet.vue"
 import { walletState } from "@/scripts/store";
 import { market } from "@/config"
-
+import { useStore } from "vuex";
+import { MutationType } from "@/store/mutations";
+const store = useStore()
 </script>
 
 <template>
@@ -32,7 +34,7 @@ import { market } from "@/config"
           </li>
           <li class="nav-item  border-l-2 border-l-gray-300 pl-2">
             <a class="nav-link text-gray-500 hover:text-gray-700 focus:text-gray-700 p-0"
-              @click="walletState=true">Wallet</a>
+              @click="store.commit(MutationType.ToggleWallet)">Wallet</a>
           </li>
         </ul>
         <!-- Left links -->

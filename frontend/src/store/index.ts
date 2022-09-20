@@ -5,6 +5,8 @@ import { getters, type Getters } from "./getters";
 import { actions, type Actions } from "./actions";
 import { mutations, type Mutations } from "./mutations";
 
+// Reference: https://soshace.com/building-web-apps-with-vue-3-composition-api-typescript-vuex4-0/
+
 export type Store = Omit<
   VuexStore<State>,
   'getters' | 'commit' | 'dispatch'
