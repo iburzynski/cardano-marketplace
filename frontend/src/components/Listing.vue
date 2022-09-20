@@ -6,7 +6,7 @@ import type { BfUTXO, DbUTXO, ListingState } from "@/types";
 import { listMarketUtxos } from "@/scripts/blockfrost";
 import { renderLovelace } from "@/scripts/wallet";
 import { buyHandler } from "@/scripts/transaction";
-import { walletAction } from "@/scripts/state"
+import { walletAction } from "@/scripts/store"
 import { convertUtxos } from "@/scripts/database";
 ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
 </script>
@@ -42,7 +42,7 @@ ace.config.setModuleUrl("ace/mode/json_worker", workerJsonUrl);
         <button @click="buy(utxo)"
           class="bg-transparent hover:bg-blue-300 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-blue-200 rounded">
           {{
-          renderLovelace(utxo.datum?.fields[1]?.int)
+          renderLovelace("fields" in utxo.datum && "int" in utxo.datum.fields[1] ? utxo.datum.fields[1].int : 0)
           }} Ada (Buy)
         </button>
       </div> <!-- /inset -->
@@ -61,7 +61,7 @@ export default {
       if (this.utxos.length == 0) {
         this.message = "Marketplace is empty"
       }
-    } catch (e) {
+    } catch (e: any) {
       if (e.status_code == 404) {
         this.message = "Marketplace is empty"
       } else {

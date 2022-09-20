@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import Wallet from "./components/Wallet.vue"
-import { walletState } from "@/scripts/state";
+import { walletState } from "@/scripts/store";
 import { market } from "@/config"
 
 </script>
@@ -52,6 +52,8 @@ import { market } from "@/config"
         <a class="text-gray-800 underline" href="https://github.com/dquadrant/kuber">Powered by Kuber</a>
       </div>
     </footer>
-    <Wallet />
+    <Suspense>
+      <Wallet />
+    </Suspense>
   </div>
 </template>

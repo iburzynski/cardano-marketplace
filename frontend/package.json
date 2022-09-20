@@ -18,7 +18,8 @@
     "buffer": "^6.0.3",
     "vue": "^3.2.37",
     "vue-router": "^4.0.14",
-    "vue3-ace-editor": "^2.2.2"
+    "vue3-ace-editor": "^2.2.2",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.2",

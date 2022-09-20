@@ -1,7 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.web.json",
   "skipLibCheck": true,
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "vuex-shim.d.ts"],
   "compilerOptions": {
     "baseUrl": ".",
     "lib": ["es2020", "dom", "scripthost"],
@@ -12,7 +12,7 @@
     "target": "es5",
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,

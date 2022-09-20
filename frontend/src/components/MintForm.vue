@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { curInstance, showMint } from "@/scripts/state"
 import { callKuberAndSubmit } from "@/scripts/wallet";
 import { buildMintRequest, getUserAddrHash } from "@/scripts/transaction";
 import type { HexString } from "@/types";
 </script>
 
 <template>
+  <button @click="showMint=!showMint" class="float-right text-blue-500 underline">
+    Mint NFT
+  </button>
   <div v-if="showMint" class="align-bottom text-blue-900 border-b-2  border-blue-700 pb-5 mb-5 px-4">
     <FormKit type="group" name="metadata" v-model="metadata">
+      <!-- todo: add validation  https://formkit.com/essentials/validation  -->
       <FormKit type="text" label="Token Name" name="name" />
       <FormKit type="text" label="Artist" name="artist" />
       <FormKit type="text" label="Image URL" name="image" />
@@ -25,11 +28,15 @@ import type { HexString } from "@/types";
 
 <script lang="ts">
 export default {
+  props: ['curInstance'],
   data() {
     return {
+      showMint: false,
       metadata: {
         name: "",
         artist: "",
+        copyright: "",
+        description: "",
         image: "",
         mediaType: "image/jpeg"
       }
@@ -38,9 +45,10 @@ export default {
   methods: {
     async mintToken() {
       try {
+        console.log(this.curInstance)
         console.log(this.metadata)
-        const keyHash: HexString = await getUserAddrHash(curInstance.value)
-        const selections: string[] = await curInstance.value.getUtxos();
+        const keyHash: HexString = await getUserAddrHash(this.curInstance)
+        const selections: string[] = await this.curInstance.getUtxos();
         // const request: any = {
         //   selections,
         //   mint: [
@@ -64,14 +72,14 @@ export default {
         // }
         const request = await buildMintRequest(selections, keyHash, this.metadata)
         console.log(request)
-        return callKuberAndSubmit(curInstance.value, request);
+        return callKuberAndSubmit(this.curInstance, request);
       } catch (e) {
         console.error(e);
         alert(e);
       };
     },
     cancelMint() {
-      showMint.value = false
+      this.showMint = false
     }
   }
 }
