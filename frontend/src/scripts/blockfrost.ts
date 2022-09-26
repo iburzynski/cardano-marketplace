@@ -2,6 +2,16 @@ import { blockfrost, market } from "@/config";
 import type { Datum, NftMetadata } from "@/types";
 import { transformNftImageUrl } from "./wallet";
 
+interface Error {
+  message: string;
+  json?: any;
+  text?: string;
+  response?: Response;
+  status_code?: number;
+  url?: string;
+  prototype?: any;
+}
+
 export async function listMarketUtxos() {
   return await getBlockfrost(
     "/addresses/" + market.address + "/utxos?order=desc"
@@ -9,12 +19,12 @@ export async function listMarketUtxos() {
 }
 
 function renderDescription(desc: Array<string> | string) {
-  return Array.isArray(desc) ? desc.join('') : desc
+  return Array.isArray(desc) ? desc.join("") : desc;
 }
 
 export async function getNftMetadata(nft: string): Promise<NftMetadata> {
   const res = await getBlockfrost("/assets/" + nft);
-  const md = res.onchain_metadata || {}
+  const md = res.onchain_metadata || {};
   // const props = ["onchain_metadata"]
   // return props.reduce((res, p) => {
   //   return {...res, p: result[p]}
@@ -42,23 +52,28 @@ async function getBlockfrost(path: string): Promise<any> {
     return await res.json();
   } else {
     const txt = await res.text();
-    let err;
     try {
       const json = JSON.parse(txt);
-      err = Error(
+      const err: Error = new Error(
         `BlockfrostAPI [Status ${res.status}]: ${
           json.message ? json.message : txt
         }`
       );
       err.json = json;
+      err.response = res;
+      err.url = url;
+      err.status_code = res.status;
+      throw err;
     } catch (e) {
-      err = Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
-      err.text = txt;
+      if (e instanceof Error) {
+        const err: Error = new Error(`BlockfrostApi [Status ${res.status}]: ${txt}`);
+        err.text = txt;
+        err.response = res;
+        err.url = url;
+        err.status_code = res.status;
+        throw err;
+      }
     }
-    err.response = res;
-    err.url = url;
-    err.status_code = res.status;
-    throw err;
   }
 }
 // return res.text().then((txt) => {

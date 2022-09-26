@@ -1,13 +1,10 @@
 import { kuberApiUrl } from "@/config";
 // @ts-nocheck
 import {
-  Address,
   AssetName,
-  BaseAddress,
   BigNum,
   hash_auxiliary_data,
   ScriptHash,
-  StakeCredential,
   Transaction,
   TransactionBody,
   TransactionUnspentOutput,
@@ -34,108 +31,116 @@ import type {
 } from "@/types";
 import { Buffer } from "buffer";
 
+function makeAuxDataDraft(tx: Transaction): Transaction {
+  const auxData = tx.auxiliary_data();
+  if (typeof auxData !== "undefined") {
+    const _txBody = tx.body();
+    // create new tx body
+    const txBody = TransactionBody.new(
+      _txBody.inputs(),
+      _txBody.outputs(),
+      _txBody.fee(),
+      _txBody.ttl()
+    );
+    txBody.set_auxiliary_data_hash(hash_auxiliary_data(auxData));
+
+    const collateral = _txBody.collateral();
+    if (typeof collateral !== "undefined") txBody.set_collateral(collateral);
+    const mint = _txBody.mint();
+    if (typeof mint !== "undefined") txBody.set_mint(mint);
+    const signers = _txBody.required_signers();
+    if (typeof signers !== "undefined") {
+      txBody.set_required_signers(signers);
+    }
+    const interval = _txBody.validity_start_interval_bignum();
+    if (typeof interval !== "undefined") {
+      txBody.set_validity_start_interval_bignum(interval);
+    }
+    const network = _txBody.network_id();
+    if (typeof network !== "undefined") {
+      txBody.set_network_id(network);
+    }
+    console.log(txBody);
+    const txDraft2 = Transaction.new(
+      txBody,
+      tx.witness_set(),
+      tx.auxiliary_data()
+    );
+    console.log(txDraft2);
+    return txDraft2;
+  }
+  return tx;
+}
+
 export async function signAndSubmit(
-  provider: CIP30Instance,
+  instance: CIP30Instance,
   _tx: string
 ): Promise<any> {
   // let tx: Transaction;
   try {
+    console.log("Attempting sign and submit");
     const txDraft1: Transaction = Transaction.from_bytes(
       Uint8Array.from(Buffer.from(_tx, "hex"))
     );
-    const auxData = txDraft1.auxiliary_data();
-    if (typeof auxData !== "undefined") {
-      const _txBody = txDraft1.body();
-      // create new tx body
-      const txBody = TransactionBody.new(
-        _txBody.inputs(),
-        _txBody.outputs(),
-        _txBody.fee(),
-        _txBody.ttl()
-      );
-      txBody.set_auxiliary_data_hash(hash_auxiliary_data(auxData));
+    const txDraft2 = makeAuxDataDraft(txDraft1);
 
-      const collateral = _txBody.collateral();
-      if (typeof collateral !== "undefined") txBody.set_collateral(collateral);
-      const mint = _txBody.mint();
-      if (typeof mint !== "undefined") txBody.set_mint(mint);
-      const signers = _txBody.required_signers();
-      if (typeof signers !== "undefined") {
-        txBody.set_required_signers(signers);
-      }
-      const interval = _txBody.validity_start_interval_bignum();
-      if (typeof interval !== "undefined") {
-        txBody.set_validity_start_interval_bignum(interval);
-      }
-      const network = _txBody.network_id();
-      if (typeof network !== "undefined") {
-        txBody.set_network_id(network);
-      }
-      const txDraft2 = Transaction.new(
-        txBody,
-        txDraft1.witness_set(),
-        txDraft1.auxiliary_data()
-      );
+    const witnessSet = TransactionWitnessSet.new();
+    // ["plutus_data", "plutus_scripts", "redeemers", "native_scripts"].forEach(
+    //   (m: string): void => {
+    //     const w = txDraft2.witness_set()[m]();
+    //     if (w) witnessSet["set_" + m](w);
+    //   }
+    // );
+    const plutusData = txDraft2.witness_set().plutus_data();
+    if (typeof plutusData !== "undefined")
+      witnessSet.set_plutus_data(plutusData);
+    const plutusScripts = txDraft2.witness_set().plutus_scripts();
+    if (typeof plutusScripts !== "undefined")
+      witnessSet.set_plutus_scripts(plutusScripts);
+    const redeemers = txDraft2.witness_set().redeemers();
+    if (typeof redeemers !== "undefined") witnessSet.set_redeemers(redeemers);
+    const nativeScripts = txDraft2.witness_set().native_scripts();
+    if (typeof nativeScripts !== "undefined")
+      witnessSet.set_native_scripts(nativeScripts);
 
-      const witnessSet = TransactionWitnessSet.new();
-      // ["plutus_data", "plutus_scripts", "redeemers", "native_scripts"].forEach(
-      //   (m: string): void => {
-      //     const w = txDraft2.witness_set()[m]();
-      //     if (w) witnessSet["set_" + m](w);
-      //   }
-      // );
-      const plutusData = txDraft2.witness_set().plutus_data();
-      if (typeof plutusData !== "undefined")
-        witnessSet.set_plutus_data(plutusData);
-      const plutusScripts = txDraft2.witness_set().plutus_scripts()
-      if (typeof plutusScripts !== "undefined")
-        witnessSet.set_plutus_scripts(plutusScripts);
-      const redeemers = txDraft2.witness_set().redeemers()
-      if (typeof redeemers !== "undefined")
-        witnessSet.set_redeemers(redeemers);
-      const nativeScripts = txDraft2.witness_set().native_scripts()
-      if (typeof nativeScripts !== "undefined")
-        witnessSet.set_native_scripts(nativeScripts);
+    // add the new witness.
 
-      // add the new witness.
-
-      const witnessesRaw: HexString = await provider.signTx(
-        Buffer.from(txDraft2.to_bytes()).toString("hex"),
-        true
-      );
-      const oldVkws = txDraft2.witness_set().vkeys();
-      const newVkws = TransactionWitnessSet.from_bytes(
-        Buffer.from(witnessesRaw, "hex")
-      ).vkeys();
-      if (typeof oldVkws !== "undefined" && typeof newVkws !== "undefined") {
-        const newVkeySet: Vkeywitnesses = Vkeywitnesses.new();
-        for (let i = 0; i < oldVkws.len(); i++) {
-          newVkeySet.add(oldVkws.get(i));
-        }
-        for (let i = 0; i < newVkws.len(); i++) {
-          newVkeySet.add(newVkws.get(i));
-        }
-        witnessSet.set_vkeys(newVkeySet);
-      } else if (typeof newVkws !== "undefined") {
-        witnessSet.set_vkeys(newVkws);
-      } else {
-        throw new Error("undefined vkey witnesses")
+    const witnessesRaw: HexString = await instance.signTx(
+      Buffer.from(txDraft2.to_bytes()).toString("hex"),
+      true
+    );
+    const oldVkws = txDraft2.witness_set().vkeys();
+    const newVkws = TransactionWitnessSet.from_bytes(
+      Buffer.from(witnessesRaw, "hex")
+    ).vkeys();
+    if (typeof oldVkws !== "undefined" && typeof newVkws !== "undefined") {
+      const newVkeySet: Vkeywitnesses = Vkeywitnesses.new();
+      for (let i = 0; i < oldVkws.len(); i++) {
+        newVkeySet.add(oldVkws.get(i));
       }
-      const signedTx = Transaction.new(
-        txDraft2.body(),
-        witnessSet,
-        txDraft2.auxiliary_data()
-      );
-      const signedTxString: HexString = Buffer.from(
-        signedTx.to_bytes()
-      ).toString("hex");
-      // @ts-ignore
-      console.log({
-        additionWitnessSet: witnessesRaw,
-        finalTx: signedTxString,
-      });
-      return provider.submitTx(signedTxString);
+      for (let i = 0; i < newVkws.len(); i++) {
+        newVkeySet.add(newVkws.get(i));
+      }
+      witnessSet.set_vkeys(newVkeySet);
+    } else if (typeof newVkws !== "undefined") {
+      witnessSet.set_vkeys(newVkws);
+    } else {
+      throw new Error("undefined vkey witnesses");
     }
+    const signedTx = Transaction.new(
+      txDraft2.body(),
+      witnessSet,
+      txDraft2.auxiliary_data()
+    );
+    const signedTxString: HexString = Buffer.from(signedTx.to_bytes()).toString(
+      "hex"
+    );
+    // @ts-ignore
+    console.log({
+      additionWitnessSet: witnessesRaw,
+      finalTx: signedTxString,
+    });
+    return instance.submitTx(signedTxString);
   } catch (e: any) {
     throw new Error("Invalid transaction string:" + e.message);
   }
@@ -157,12 +162,13 @@ export function listProviders(): CIP30Provider[] {
 }
 
 export async function callKuberAndSubmit(
-  provider: CIP30Instance,
+  instance: CIP30Instance,
   request: KuberRequest
 ) {
   const body = JSON.stringify(request);
-  const network = await provider.getNetworkId();
+  const network = await instance.getNetworkId();
   console.log("Current Network:", network);
+  console.log(body);
   const kuberUrlByNetwork = kuberApiUrl;
 
   return fetch(
@@ -180,11 +186,12 @@ export async function callKuberAndSubmit(
       throw Error(`Kubær API call: ` + e.message);
     })
     .then(async (res) => {
+      console.log(res.status);
       if (res.status === 200) {
         const json = await res.json();
         console.log(json);
         try {
-          return await signAndSubmit(provider, json.tx);
+          return await signAndSubmit(instance, json.tx);
         } catch (e: any) {
           if (e.info && e.code) {
             throw Error(`Code: ${e.code} :: \n ${e.info}`);
@@ -265,6 +272,7 @@ export async function calculatePolicyHash(script: Script): Promise<string> {
 function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
   const assets: Map<ScriptHash, Map<AssetName, BigNum>> = new Map();
   const ma = value.multiasset();
+  console.log(ma?.keys().len());
   if (ma) {
     const multiAssets = value.multiasset()?.keys();
     if (typeof multiAssets !== "undefined") {
@@ -273,8 +281,10 @@ function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
         const policyAssets = ma.get(policy);
         if (typeof policyAssets !== "undefined") {
           const assetNames = policyAssets?.keys();
+          console.log(assetNames.len());
           if (typeof assetNames !== "undefined") {
             const assetNameMap = new Map();
+            console.log(assetNameMap);
             assets.set(policy, assetNameMap);
             for (let k = 0; k < assetNames.len(); k++) {
               const policyAsset: AssetName = assetNames.get(k);
@@ -285,13 +295,16 @@ function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
                 oldQ ? oldQ.checked_add(newQ) : newQ
               );
             }
+          } else {
+            throw new Error("assetNames is undefined");
           }
-          throw new Error("assetNames is undefined");
+        } else {
+          throw new Error("policyAssets is undefined");
         }
       }
-      throw new Error("policyAssets is undefined");
+    } else {
+      throw new Error("multiAssets is undefined");
     }
-    throw new Error("multiAssets is undefined");
   }
   return assets;
 }
@@ -301,12 +314,17 @@ export async function getWalletValue(
 ): Promise<WalletValue> {
   const utxos: string[] = await provider.getUtxos();
   const walletVal = utxos.reduce(
-    (walletVal: { lovelace: BigNum; multiassets: {
-        [key: string]: {
-          [key: string]: bigint
-          ;
+    (
+      walletVal: {
+        lovelace: BigNum;
+        multiassets: {
+          [key: PolicyId]: {
+            [key: TokenName]: bigint;
+          };
         };
-      } }, u: string) => {
+      },
+      u: string
+    ) => {
       const utxo = TransactionUnspentOutput.from_bytes(Buffer.from(u, "hex"));
       const value: Value = utxo.output().amount();
       // update total lovelace
@@ -317,6 +335,8 @@ export async function getWalletValue(
           [key: TokenName]: bigint;
         };
       } = { ...walletVal.multiassets };
+      console.log(walletVal.multiassets);
+      console.log(makeAssetsMap(value));
       makeAssetsMap(value).forEach(
         (assetNameMap: Map<AssetName, BigNum>, scriptHash: ScriptHash) => {
           const policy: PolicyId = Buffer.from(scriptHash.to_bytes()).toString(
@@ -324,7 +344,17 @@ export async function getWalletValue(
           );
           assetNameMap.forEach((q: BigNum, a: AssetName) => {
             const assetName: string = Buffer.from(a.name()).toString("hex");
-            multiassets[policy][assetName] = BigInt(q.to_str());
+            console.log(`Policy: ${policy}`);
+            console.log(`Asset Name: ${assetName}`);
+            // multiassets[policy][assetName] = BigInt(q.to_str());
+            const qInt = BigInt(q.to_str());
+            if (!multiassets[policy]) {
+              console.log("policy property created")
+              multiassets[policy] = { [assetName]: qInt };
+            } else {
+              multiassets[policy][assetName] = qInt;
+            }
+            console.log(multiassets)
           });
         }
       );
@@ -390,7 +420,7 @@ export async function getWalletValue(
 // };
 
 export function decodeAssetName(asset: string): string {
-  return Buffer.from(asset, "hex").toString("utf-8")
+  return Buffer.from(asset, "hex").toString("utf-8");
 }
 
 export function renderLovelace(l: bigint | number): bigint | number {

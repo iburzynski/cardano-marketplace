@@ -12,7 +12,10 @@ import {
   Address,
   BaseAddress,
   Ed25519KeyHash,
+  hash_auxiliary_data,
   StakeCredential,
+  Transaction,
+  TransactionBody,
 } from "@emurgo/cardano-serialization-lib-asmjs";
 import { market } from "@/config";
 import { calculatePolicyHash, callKuberAndSubmit } from "./wallet";
@@ -49,45 +52,6 @@ export function genSellerAddr(datum: Datum): string {
   } else {
     throw "Error: malformed datum";
   }
-}
-
-export function buyHandler(
-  utxo: DbUTXO
-): (provider: CIP30Instance) => Promise<any> {
-  const datum = utxo.datum;
-  // validation required to ensure datum is correctly structured:
-  const value =
-    "fields" in datum && datum.fields[1] && "int" in datum.fields[1]
-      ? datum.fields[1].int.toString()
-      : null; // what should go here if validation fails?
-  if (value) {
-    return async function (provider: CIP30Instance) {
-      const { address, script } = market;
-      const request: KuberBuyRequest = {
-        selections: await provider.getUtxos(),
-        inputs: [
-          {
-            address,
-            datum,
-            redeemer: { fields: [], constructor: 0 },
-            script,
-            utxo: {
-              hash: utxo.tx_hash,
-              index: utxo.tx_index,
-            },
-          },
-        ],
-        outputs: [
-          {
-            address: genSellerAddr(datum),
-            value,
-          },
-        ],
-      };
-      return callKuberAndSubmit(provider, request);
-    };
-  }
-  throw new Error("Missing value");
 }
 
 function makeKeyHash(cred: StakeCredential): string {
@@ -157,7 +121,9 @@ export async function buildMintRequest(
   };
 }
 
-export async function getUsedAddr(instance: CIP30Instance): Promise<BaseAddress> {
+export async function getUsedAddr(
+  instance: CIP30Instance
+): Promise<BaseAddress> {
   const addresses = await instance.getUsedAddresses();
   const addr = BaseAddress.from_address(
     Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))

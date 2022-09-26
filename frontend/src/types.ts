@@ -31,12 +31,6 @@ export interface WalletValue {
   };
 }
 
-export interface WalletAction {
-  enable: boolean;
-  callback: null | ((provider: CIP30Instance) => Promise<any>);
-  message: null | string;
-}
-
 export interface Script {
   cborHex?: string;
   description?: string;
@@ -44,25 +38,15 @@ export interface Script {
   type: string;
 }
 
-// export type UTXO = BfUTXO | DbUTXO,
-
 export interface BfUTXO {
   amount: { quantity: string; unit: string }[];
   assetName: string;
-  // policy: string,
   data_hash: string;
   nft: string;
   id: string;
   tx_hash: string;
   tx_index: string;
 }
-
-// export type Datum =
-//   | { constructor: number; fields: Datum[] }
-//   | { constructor: number; fields: { int: number } }
-//   | { constructor: number; fields: { bytes: string } }
-//   | { bytes: string }
-//   | { int: number }
 
 export type Datum =
   | {
@@ -75,7 +59,7 @@ export type Datum =
 export interface NftMetadata {
   artist: string;
   copyright: string;
-  description: any;
+  description: string;
   image: string;
   name: string;
 }
@@ -94,7 +78,6 @@ export interface MultiAssetObj {
   tokenName: string;
   policy: string;
   asset: string;
-  sellInput: boolean;
   metadata: NftMetadata;
 }
 
@@ -108,25 +91,25 @@ export interface ListingState {
   timeout: number;
 }
 
-export interface WalletState {
-  prompt: string;
-  providers: null | CIP30Provider[];
-  curProvider: null | CIP30Provider;
-  walletPkh: null | string;
-  curInstance: null | CIP30Instance;
-  sellAmount: string;
-  showToast: boolean;
-  lastSalePrompt: number;
-  balance: {
-    lovelace: bigint;
-    multiAssets: MultiAssetObj[];
-  };
-}
+// export interface WalletState {
+  // prompt: string;
+  // providers: null | CIP30Provider[];
+  // curProvider: null | CIP30Provider;
+  // walletPkh: null | string;
+  // curInstance: null | CIP30Instance;
+  // sellAmount: string;
+  // showToast: boolean;
+  // lastSalePrompt: number;
+  // balance: {
+    // lovelace: bigint;
+    // multiAssets: MultiAssetObj[];
+  // };
+// }
 
-export interface WalletBalance {
-  lovelace: bigint;
-  multiAssets: MultiAssetObj[];
-}
+// export interface WalletBalance {
+//   lovelace: bigint;
+//   multiAssets: MultiAssetObj[];
+// }
 
 export interface MintFormData {
   tokenName: string;
@@ -134,25 +117,8 @@ export interface MintFormData {
   imageUrl: string;
 }
 
-export type KuberRequest =
-  | KuberBuyRequest
-  | KuberMintRequest
-  | KuberSellRequest;
-
-export interface KuberMintRequest {
-  metadata: {
-    721: {
-      [key: PolicyId]: {
-        [key: TokenName]: NftMetadata;
-      };
-    };
-  };
-  mint: {
-    script: Script;
-    amount: { [key: string]: number };
-  }[];
-  selections: string[];
-}
+// Kuber Requests
+export type KuberRequest = KuberBuyRequest | KuberMintRequest | KuberSellRequest
 
 export interface KuberBuyRequest {
   inputs: {
@@ -171,6 +137,21 @@ export interface KuberBuyRequest {
   outputs: {
     address: string;
     value: string;
+  }[];
+  selections: string[];
+}
+
+export interface KuberMintRequest {
+  metadata: {
+    721: {
+      [key: PolicyId]: {
+        [key: TokenName]: NftMetadata;
+      };
+    };
+  };
+  mint: {
+    script: Script;
+    amount: { [key: string]: number };
   }[];
   selections: string[];
 }

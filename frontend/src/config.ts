@@ -1,11 +1,14 @@
-export const kuberApiUrl = "https://cnftregistry.io/kuber";
+export const kuberApiUrl = "https://testnet.cnftregistry.io/kuber";
 export const blockfrost = {
-  apiUrl: "https://cardano-testnet.blockfrost.io/api/v0",
-  apiKey: "testnetfw496vwbVTrYv5tFDIpTDLqcelb947po", // NEVER COMMIT API_KEYS in your source code  (Made available only for Plutus Developer Hackathon)
+  apiUrl: import.meta.env.VITE_API_ENDPOINT,
+  // apiUrl: "https://cardano-testnet.blockfrost.io/api/v0",
+  // apiKey: "testnetfw496vwbVTrYv5tFDIpTDLqcelb947po", // NEVER COMMIT API_KEYS in your source code  (Made available only for Plutus Developer Hackathon)
+  apiKey: import.meta.env.VITE_API_KEY
 };
 export const market = {
   // this adress is obtained by using `market-cli ls` command
   address: "addr_test1wq40nfjurthn364rvhhzu2y8z3t0d53s2z9sz0303hya3us9a490f",
+  // address: "addr_test1wqsewsqrurhxer8wx598p7naf9mmcwhr2jchkq6srtf78hctj0p2r",
   script: {
     type: "PlutusScriptV1",
     description: "",

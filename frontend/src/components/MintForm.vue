@@ -1,99 +1,66 @@
 <script setup lang="ts">
 import { callKuberAndSubmit } from "@/scripts/wallet";
 import { buildMintRequest, getUserAddrHash } from "@/scripts/transaction";
-import type { HexString } from "@/types";
-</script>
+import type { CIP30Instance, HexString, KuberMintRequest, NftMetadata } from "@/types";
+import { ref, type Ref } from "vue";
+import { reset } from '@formkit/core'
 
-<template>
-  <button @click="showMint=!showMint" class="float-right text-blue-500 underline">
-    Mint NFT
-  </button>
-  <div v-if="showMint" class="align-bottom text-blue-900 border-b-2  border-blue-700 pb-5 mb-5 px-4">
-    <FormKit type="group" name="metadata" v-model="metadata">
-      <!-- todo: add validation  https://formkit.com/essentials/validation  -->
-      <FormKit type="text" label="Token Name" name="name" />
-      <FormKit type="text" label="Artist" name="artist" />
-      <FormKit type="text" label="Image URL" name="image" />
-    </FormKit>
-    <button @click="mintToken"
-      class="w-full border-2 border-indigo-500 cursor-pointer hover:bg-indigo-500 hover:text-white hover:border-indigo-600 active:ring-indigo-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-indigo-500">
-      Mint
-    </button>
-    <button @click="cancelMint"
-      class="w-full border-2 border-red-500 cursor-pointer hover:bg-red-500 hover:text-white hover:border-red-600 active:ring-red-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-red-500">
-      Cancel
-    </button>
-  </div>
-</template>
+const { instance }: Readonly<{
+  instance?: CIP30Instance;
+}> = defineProps(['instance'])
+const isFormShown: Ref<boolean> = ref(false)
 
-<script lang="ts">
-export default {
-  props: ['curInstance'],
-  data() {
-    return {
-      showMint: false,
-      metadata: {
-        name: "",
-        artist: "",
-        copyright: "",
-        description: "",
-        image: "",
-        mediaType: "image/jpeg"
-      }
+function toggleForm() {
+  isFormShown.value = !isFormShown.value
+}
+async function testMint(metadata: any) {
+  console.log(typeof metadata)
+  await new Promise((r) => setTimeout(r, 1000))
+  console.log(metadata)
+}
+async function mintToken({ metadata }: { metadata: NftMetadata }) {
+  try {
+    if (typeof instance !== "undefined") {
+      console.log(metadata);
+      const keyHash: HexString = await getUserAddrHash(instance)
+      const selections: string[] = await instance.getUtxos();
+      const request: KuberMintRequest = await buildMintRequest(selections, keyHash, metadata)
+      console.log(request);
+      await callKuberAndSubmit(instance, request);
+      isFormShown.value = false;
+      reset("mint");
+    } else {
+      throw new Error("Undefined instance");
     }
-  },
-  methods: {
-    async mintToken() {
-      try {
-        console.log(this.curInstance)
-        console.log(this.metadata)
-        const keyHash: HexString = await getUserAddrHash(this.curInstance)
-        const selections: string[] = await this.curInstance.getUtxos();
-        // const request: any = {
-        //   selections,
-        //   mint: [
-        //     {
-        //       script: {
-        //         type: "sig",
-        //         keyHash
-        //       },
-        //       amount: {},
-        //     },
-        //   ],
-        // };
-        // request.mint[0].amount[this.metadata.name] = 1;
-
-        // if (this.metadata.imageUrl || this.metadata.artist) {
-        //   request.metadata = {
-        //     721: {}
-        //   }
-        //   request.metadata[721][policyId] = {};
-        //   request.metadata[721][policyId][tokenName_] = this.metadata;
-        // }
-        const request = await buildMintRequest(selections, keyHash, this.metadata)
-        console.log(request)
-        return callKuberAndSubmit(this.curInstance, request);
-      } catch (e) {
-        console.error(e);
-        alert(e);
-      };
-    },
-    cancelMint() {
-      this.showMint = false
-    }
-  }
+  } catch (e) {
+    console.error(e);
+    alert(e);
+  };
 }
 </script>
 
-<!-- <form id="mint-form" class="fade ani">
-  <input name="tokenName"
-    class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-    placeholder="Unique Token Name" maxlength="64" />
-  <input name="artist"
-    class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-    placeholder="Artist" maxlength="64" />
-  <input name="imageUrl"
-    class="w-full mb-2 rounded text-gray-800 py-2 px-3 border-2 border-gray-200 focus:outline-2 focus:outline-indigo-500"
-    placeholder="Image url" maxlength="64" />
-</form>
-<div class="flex w-full justify-between gap-4"> -->
+<template>
+  <button @click="toggleForm" class="float-right text-blue-500 underline">
+    Mint NFT
+  </button>
+  <div v-if="isFormShown" class="align-bottom text-blue-900 border-b-2  border-blue-700 pb-5 mb-5 px-4">
+    <FormKit type="form" id="mint" submit-label="Mint" @submit="mintToken">
+      <FormKit type="group" name="metadata">
+        <!-- https://formkit.com/essentials/validation  -->
+        <FormKit type="text" label="Token Name" name="name" validation="required" />
+        <FormKit type="text" label="Artist" name="artist" validation="required" />
+        <FormKit type="text" label="Copyright" name="copyright" />
+        <FormKit type="textarea" label="Description" name="description" />
+        <FormKit type="text" label="Image URL" name="image" validation="required | url" />
+      </FormKit>
+    </FormKit>
+    <!-- <button @click="mintToken"
+      class="w-full border-2 border-indigo-500 cursor-pointer hover:bg-indigo-500 hover:text-white hover:border-indigo-600 active:ring-indigo-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-indigo-500">
+      Mint
+    </button> -->
+    <!-- <button @click="cancelMint"
+      class="w-full border-2 border-red-500 cursor-pointer hover:bg-red-500 hover:text-white hover:border-red-600 active:ring-red-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-red-500">
+      Cancel
+    </button> -->
+  </div>
+</template>

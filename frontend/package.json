@@ -13,6 +13,7 @@
     "@emurgo/cardano-serialization-lib-asmjs": "11.0.0-beta.1",
     "@formkit/vue": "^1.0.0-beta.10",
     "@headlessui/vue": "^1.6.4",
+    "@heroicons/vue": "^2.0.11",
     "ace-builds": "1.4.14",
     "bootstrap-vue": "^2.22.0",
     "buffer": "^6.0.3",
