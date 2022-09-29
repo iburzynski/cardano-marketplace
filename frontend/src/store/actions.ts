@@ -1,4 +1,4 @@
-import type { CIP30Provider } from "@/types";
+import type { CIP30Instance, CIP30Provider } from "@/types";
 import type { ActionContext, ActionTree } from "vuex";
 import { type Mutations, MutationType } from "./mutations";
 import type { State } from "./state";
@@ -25,12 +25,13 @@ export type Actions = {
 
 export const actions: ActionTree<State, State> & Actions = {
   async [ActionTypes.ConnectProvider]({ commit }, provider) {
-    commit(MutationType.SetProvider, provider);
-    const instance = await provider.enable();
+    const instance: CIP30Instance = await provider.enable();
+    const utxos: string[] = await instance.getUtxos();
     commit(MutationType.SetInstance, instance);
+    commit(MutationType.SetUtxos, utxos);
   },
   async [ActionTypes.DisconnectProvider]({ commit }) {
-    commit(MutationType.SetProvider, null);
     commit(MutationType.SetInstance, null);
-  }
+    commit(MutationType.SetUtxos, []);
+  },
 };

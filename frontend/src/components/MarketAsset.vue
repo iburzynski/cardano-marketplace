@@ -1,55 +1,43 @@
 <script setup lang="ts">
-import { market } from '@/config';
-import { genSellerAddr } from '@/scripts/transaction';
-import { callKuberAndSubmit, renderLovelace } from '@/scripts/wallet';
-import { MutationType } from '@/store/mutations';
-import type { CIP30Instance, DbUTXO, KuberBuyRequest } from '@/types';
+import type { CIP30Instance, DbUTXO } from '@/types';
+import { computed } from 'vue';
 import { useStore } from 'vuex';
+import { MutationType } from '@/store/mutations';
+import { callKuberAndSubmit, buildBuyRequest } from '@/utils/transaction';
 
-const { instance, utxo }: Readonly<{
+const { instance, selections, utxo }: Readonly<{
   instance?: CIP30Instance;
+  selections?: string[];
   utxo?: DbUTXO;
-}> = defineProps(['instance', 'utxo'])
+}> = defineProps(['instance', 'selections', 'utxo'])
 const store = useStore()
 function toggleWallet() {
   store.commit(MutationType.ToggleWallet)
 }
+const adaPrice = computed(() => {
+  return lovelaceToAda(utxo && "fields" in utxo.datum && "int" in utxo.datum.fields[1] ? utxo.datum.fields[1].int : NaN)
+})
+
+function lovelaceToAda(l: bigint | number): bigint | number {
+  if (typeof l === "number") {
+    return Math.floor(l / 1e4) / 100;
+  }
+  return l && parseFloat((l / BigInt(10000)).toString()) / 100;
+}
+
 async function buyAsset(): Promise<any> {
-  if (typeof instance !== "undefined" && typeof utxo !== "undefined") {
-    const datum = utxo.datum;
-    // validation required to ensure datum is correctly structured:
-    const value =
-      "fields" in datum && datum.fields[1] && "int" in datum.fields[1]
-        ? datum.fields[1].int.toString()
-        : null; // what should go here if validation fails?
-    if (value) {
-      const { address, script } = market;
-      const request: KuberBuyRequest = {
-        selections: await instance.getUtxos(),
-        inputs: [
-          {
-            address,
-            datum,
-            redeemer: { fields: [], constructor: 0 },
-            script,
-            utxo: {
-              hash: utxo.tx_hash,
-              index: utxo.tx_index,
-            },
-          },
-        ],
-        outputs: [
-          {
-            address: genSellerAddr(datum),
-            value,
-          },
-        ],
-      };
-      return callKuberAndSubmit(instance, request);
+  if (instance) {
+    if (selections) {
+      if (utxo) {
+        return callKuberAndSubmit(instance, buildBuyRequest(selections, utxo));
+      } else {
+        throw new Error("Undefined utxo")
+      }
+    } else {
+      throw new Error("Undefined selections")
     }
-    throw new Error("Missing value");
   } else {
-    throw new Error("Undefined instance or UTXO value")
+    throw new Error("Undefined instance")
   }
 }
 </script>
@@ -82,9 +70,7 @@ async function buyAsset(): Promise<any> {
       </div> <!-- /metadata -->
       <button @click="instance ? buyAsset() : toggleWallet()"
         class="bg-transparent hover:bg-blue-300 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-blue-200 rounded">
-        {{
-        renderLovelace("fields" in utxo.datum && "int" in utxo.datum.fields[1] ? utxo.datum.fields[1].int : 0)
-        }} Ada (Buy)
+        {{ adaPrice }} Ada (Buy)
       </button>
     </div> <!-- /inset -->
   </div>

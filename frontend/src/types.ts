@@ -164,3 +164,8 @@ export interface KuberSellRequest {
   }[];
   selections: string[];
 }
+
+export interface UserKeyhashes {
+  pubKeyhash: string;
+  stakeKeyhash: string;
+}

@@ -40,7 +40,7 @@ export function openDB(): Promise<IDBDatabase> {
           Promise.resolve(db);
         };
       };
-    } catch (e) {
+    } catch (e: any) {
       reject(e.message);
     }
   });
@@ -85,7 +85,7 @@ function convertUTXO(db: IDBDatabase): (utxo: BfUTXO) => Promise<DbUTXO> {
   return async (utxo: BfUTXO) => {
     try {
       return await getUtxo(readHandle, utxo.tx_hash);
-    } catch (e) {
+    } catch (e: any) {
       console.log("Error returned from db", e);
       try {
         const dbUtxo: DbUTXO = await makeDatabaseUtxo(utxo);
@@ -93,7 +93,7 @@ function convertUTXO(db: IDBDatabase): (utxo: BfUTXO) => Promise<DbUTXO> {
           saveUtxo(db, dbUtxo);
         });
         return dbUtxo;
-      } catch (e_1) {
+      } catch (e_1: any) {
         if (e_1.status_code && e_1.status_code == 404) {
           // const data_1 = {
           //   utxo: utxo.id,

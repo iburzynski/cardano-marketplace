@@ -1,34 +1,32 @@
 <script setup lang="ts">
-import { callKuberAndSubmit } from "@/scripts/wallet";
-import { buildMintRequest, getUserAddrHash } from "@/scripts/transaction";
-import type { CIP30Instance, HexString, KuberMintRequest, NftMetadata } from "@/types";
+import { buildMintRequest, callKuberAndSubmit, getUserKeyhashes } from "@/utils/transaction";
+import type { CIP30Instance, KuberMintRequest, NftMetadata, UserKeyhashes } from "@/types";
 import { ref, type Ref } from "vue";
 import { reset } from '@formkit/core'
 
-const { instance }: Readonly<{
+const { instance, selections }: Readonly<{
   instance?: CIP30Instance;
-}> = defineProps(['instance'])
+  selections?: string[];
+}> = defineProps(['instance', 'selections'])
 const isFormShown: Ref<boolean> = ref(false)
 
 function toggleForm() {
   isFormShown.value = !isFormShown.value
 }
-async function testMint(metadata: any) {
-  console.log(typeof metadata)
-  await new Promise((r) => setTimeout(r, 1000))
-  console.log(metadata)
-}
 async function mintToken({ metadata }: { metadata: NftMetadata }) {
   try {
     if (typeof instance !== "undefined") {
-      console.log(metadata);
-      const keyHash: HexString = await getUserAddrHash(instance)
-      const selections: string[] = await instance.getUtxos();
-      const request: KuberMintRequest = await buildMintRequest(selections, keyHash, metadata)
-      console.log(request);
-      await callKuberAndSubmit(instance, request);
-      isFormShown.value = false;
-      reset("mint");
+      if (typeof selections !== "undefined") {
+        console.log(metadata);
+        const { pubKeyhash }: UserKeyhashes = await getUserKeyhashes(instance)
+        const request: KuberMintRequest = await buildMintRequest(selections, pubKeyhash, metadata)
+        console.log(request);
+        await callKuberAndSubmit(instance, request);
+        isFormShown.value = false;
+        reset("mint");
+      } else {
+        throw new Error("Undefined selections")
+      }
     } else {
       throw new Error("Undefined instance");
     }
@@ -54,13 +52,5 @@ async function mintToken({ metadata }: { metadata: NftMetadata }) {
         <FormKit type="text" label="Image URL" name="image" validation="required | url" />
       </FormKit>
     </FormKit>
-    <!-- <button @click="mintToken"
-      class="w-full border-2 border-indigo-500 cursor-pointer hover:bg-indigo-500 hover:text-white hover:border-indigo-600 active:ring-indigo-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-indigo-500">
-      Mint
-    </button> -->
-    <!-- <button @click="cancelMint"
-      class="w-full border-2 border-red-500 cursor-pointer hover:bg-red-500 hover:text-white hover:border-red-600 active:ring-red-700 active:ring-offset-2 active:ring-2 rounded-xl p-2 text-center text-red-500">
-      Cancel
-    </button> -->
   </div>
 </template>

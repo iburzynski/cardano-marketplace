@@ -1,13 +1,13 @@
-import type { CIP30Instance, CIP30Provider } from "@/types";
+import type { CIP30Instance } from "@/types";
 
 export type State = {
   instance: null | CIP30Instance;
-  provider: null | CIP30Provider;
   showWallet: boolean;
-}
+  utxos: string[];
+};
 
 export const state: State = {
   instance: null,
-  provider: null,
-  showWallet: false
-}
+  showWallet: false,
+  utxos: [],
+};
