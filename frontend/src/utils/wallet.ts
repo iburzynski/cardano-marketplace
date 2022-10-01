@@ -7,15 +7,12 @@ import {
   TransactionUnspentOutput,
   Value,
 } from "@emurgo/cardano-serialization-lib-asmjs";
-
 declare global {
   interface Window {
     cardano: any;
   }
 }
-
 import type {
-  CIP30Instance,
   CIP30Provider,
   MultiAssetObj,
   NftMetadata,
@@ -26,9 +23,6 @@ import type {
 import { Buffer } from "buffer";
 import { getNftMetadata } from "./blockfrost";
 
-/**
- * Wallet display-related functions
- */
  export function listProviders(): CIP30Provider[] {
   if (!window.cardano) {
     return [];
@@ -40,7 +34,6 @@ import { getNftMetadata } from "./blockfrost";
     },
     []
   );
-  console.log("Providers", providers);
   return providers;
 }
 
@@ -81,11 +74,6 @@ export function getWalletValue(
             console.log(`Policy: ${policy}`);
             console.log(`Asset Name: ${assetName}`);
             const qInt = BigInt(q.to_str());
-            // if (!multiassets[policy]) {
-            //   multiassets[policy] = { [assetName]: qInt };
-            // } else {
-            //   multiassets[policy][assetName] = qInt;
-            // }
             (!multiassets[policy] &&
               (multiassets[policy] = { [assetName]: qInt })) ||
               (multiassets[policy][assetName] = qInt);
@@ -110,7 +98,6 @@ function makeAssetsMap(value: Value): Map<ScriptHash, Map<AssetName, BigNum>> {
   /**
    * Helper function for `getWalletValue`
    */
-
   const assetsMap: Map<ScriptHash, Map<AssetName, BigNum>> = new Map();
   const ma: MultiAsset | undefined = value.multiasset();
   if (typeof ma !== "undefined") {

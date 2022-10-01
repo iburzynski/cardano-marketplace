@@ -1,76 +1,75 @@
 <script setup lang="ts">
-import type { CIP30Instance, DbUTXO } from '@/types';
-import { computed } from 'vue';
-import { useStore } from 'vuex';
-import { MutationType } from '@/store/mutations';
-import { callKuberAndSubmit, buildBuyRequest } from '@/utils/transaction';
+import type { DbUTXO } from '@/types';
+import { computed, ref, type ComputedRef, type Ref } from 'vue';
 
-const { instance, selections, utxo }: Readonly<{
-  instance?: CIP30Instance;
-  selections?: string[];
-  utxo?: DbUTXO;
-}> = defineProps(['instance', 'selections', 'utxo'])
-const store = useStore()
-function toggleWallet() {
-  store.commit(MutationType.ToggleWallet)
-}
-const adaPrice = computed(() => {
-  return lovelaceToAda(utxo && "fields" in utxo.datum && "int" in utxo.datum.fields[1] ? utxo.datum.fields[1].int : NaN)
+const props: Readonly<{
+  asset?: DbUTXO;
+  connected?: boolean;
+}> = defineProps(['asset', 'connected'])
+
+const emit = defineEmits<{
+  (e: 'buy', asset: DbUTXO): void
+  (e: 'openWallet'): void
+}>()
+
+const adaPrice: ComputedRef<number> = computed(() => {
+  const lovelace = props.asset &&
+    "fields" in props.asset.datum
+    && "int" in props.asset.datum.fields[1] ?
+    props.asset.datum.fields[1].int : NaN
+  return typeof lovelace === "number" ?
+    Math.floor(lovelace / 1e4) / 100 :
+    parseFloat((lovelace / BigInt(10000)).toString()) / 100
 })
 
-function lovelaceToAda(l: bigint | number): bigint | number {
-  if (typeof l === "number") {
-    return Math.floor(l / 1e4) / 100;
-  }
-  return l && parseFloat((l / BigInt(10000)).toString()) / 100;
+const imgSrc: Ref<string> = ref(props.asset ? props.asset.metadata.image : "")
+
+// Event Handlers (trigger corresponding upstream handlers via emits)
+function buyAsset(): void {
+  (typeof props.asset !== "undefined") && emit("buy", props.asset)
 }
 
-async function buyAsset(): Promise<any> {
-  if (instance) {
-    if (selections) {
-      if (utxo) {
-        return callKuberAndSubmit(instance, buildBuyRequest(selections, utxo));
-      } else {
-        throw new Error("Undefined utxo")
-      }
-    } else {
-      throw new Error("Undefined selections")
-    }
-  } else {
-    throw new Error("Undefined instance")
-  }
+function openWallet(): void {
+  emit('openWallet')
 }
+
+function setAltImg() {
+  imgSrc.value = "./src/assets/cardano_logo.svg"
+}
+
 </script>
 
 <template>
-  <div class="nft p-2 flex">
-    <img :alt="utxo.metadata.name +'_img'" class="inline-block h-32 w-32  mr-4 border-red-300 border-2"
-      :src="utxo.metadata.image" />
-    <div class="nft__inset flex flex-col justify-between pb-2">
+  <div class="nft p-4 flex flex-wrap w-1/3 bg-white rounded-lg shadow-lg">
+    <img :alt="asset.metadata.name +'_img'" class="inline-block w-1/2"
+      :src="imgSrc"
+      @error="setAltImg"/>
+    <div class="nft__inset flex flex-col justify-between w-1/2 p-6">
       <div class="nft__metadata">
-        <div v-if="utxo.metadata.name" class="nft__metadata__name">
-          <a :href="'https://testnet.cardanoscan.io/token/'+utxo.nft"> &#x29c9; </a>
-          <span class="text-blue-900 text-xl font-extrabol"> {{ utxo.metadata.name }} </span>
-          <span v-if="utxo.metadata.artist" class="nft__metadata__artist"> <span class="text-gray-400 text-xs">
+        <div v-if="asset.metadata.name" class="nft__metadata__name">
+          <a :href="'https://testnet.cardanoscan.io/token/'+asset.nft"> &#x29c9; </a>
+          <span class="text-blue-900 text-xl font-extrabol"> {{ asset.metadata.name }} </span>
+          <span v-if="asset.metadata.artist" class="nft__metadata__artist"> <span class="text-gray-400 text-xs">
               &nbsp; by {{
-              utxo.metadata.artist }}</span> </span>
+              asset.metadata.artist }}</span> </span>
         </div> <!-- /name -->
-        <div v-else class="nft__metadata__name text-blue-700 font-extrabold"> {{ utxo.nft?.substring(0, 8) }}...{{
-        utxo.metadata.name
+        <div v-else class="nft__metadata__name text-blue-700 font-extrabold"> {{ asset.nft?.substring(0, 8) }}...{{
+        asset.metadata.name
         }}
         </div> <!-- /name -->
-        <div v-if="utxo.metadata.copyright || utxo.metadata.description" class="nft__metadata__extra">
-          <div v-if="utxo.metadata.description" class="nft__metadata__description text-gray-500">
-            {{ utxo.metadata.description }}
+        <div v-if="asset.metadata.copyright || asset.metadata.description" class="nft__metadata__extra">
+          <div v-if="asset.metadata.description" class="nft__metadata__description text-gray-500">
+            {{ asset.metadata.description }}
           </div> <!-- /description -->
-          <div v-if="utxo.metadata.copyright" class="nft__metadata__copyright text-gray-500"> Copyright:
-            {{ utxo.metadata.copyright }}
+          <div v-if="asset.metadata.copyright" class="nft__metadata__copyright text-gray-500"> Copyright:
+            {{ asset.metadata.copyright }}
           </div> <!-- /copyright -->
         </div> <!-- /extra -->
       </div> <!-- /metadata -->
-      <button @click="instance ? buyAsset() : toggleWallet()"
-        class="bg-transparent hover:bg-blue-300 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-blue-200 rounded">
-        {{ adaPrice }} Ada (Buy)
+      <h3 class="text-2xl font-bold"><span class="text-3xl">₳</span> {{ adaPrice }}</h3>
+      <button @click="connected ? buyAsset() : openWallet()"
+        class="bg-green-400 hover:bg-yellow-400 text-gray-800 font-semibold py-2 px-4 rounded">
+        Buy
       </button>
     </div> <!-- /inset -->
   </div>

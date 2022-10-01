@@ -54,7 +54,7 @@ export type Datum =
       fields: Datum[];
     }
   | { bytes: string }
-  | { int: number };
+  | { int: number | bigint };
 
 export interface NftMetadata {
   artist: string;
@@ -90,26 +90,6 @@ export interface ListingState {
   interval: number;
   timeout: number;
 }
-
-// export interface WalletState {
-  // prompt: string;
-  // providers: null | CIP30Provider[];
-  // curProvider: null | CIP30Provider;
-  // walletPkh: null | string;
-  // curInstance: null | CIP30Instance;
-  // sellAmount: string;
-  // showToast: boolean;
-  // lastSalePrompt: number;
-  // balance: {
-    // lovelace: bigint;
-    // multiAssets: MultiAssetObj[];
-  // };
-// }
-
-// export interface WalletBalance {
-//   lovelace: bigint;
-//   multiAssets: MultiAssetObj[];
-// }
 
 export interface MintFormData {
   tokenName: string;

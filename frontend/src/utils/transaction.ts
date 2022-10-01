@@ -135,7 +135,6 @@ export async function buildSellRequest(
   sellAmount: number,
   { pubKeyhash, stakeKeyhash }: UserKeyhashes
 ): Promise<KuberSellRequest> {
-  console.log("building sell request")
   return {
     selections,
     outputs: [
@@ -208,7 +207,7 @@ export async function calculatePolicyHash(script: Script): Promise<string> {
 /**
  * Transaction Submission
  */
-export async function callKuberAndSubmit(
+export async function submitToKuber(
   instance: CIP30Instance,
   request: KuberRequest
 ) {
@@ -273,13 +272,11 @@ export async function callKuberAndSubmit(
 
 async function signAndSubmit(
   instance: CIP30Instance,
-  _tx: string
+  tx: string
 ): Promise<any> {
-  // let tx: Transaction;
   try {
-    console.log("Attempting sign and submit");
     const txDraft1: Transaction = Transaction.from_bytes(
-      Uint8Array.from(Buffer.from(_tx, "hex"))
+      Uint8Array.from(Buffer.from(tx, "hex"))
     );
     const txDraft2 = makeAuxDataDraft(txDraft1);
 
@@ -386,29 +383,6 @@ function makeAuxDataDraft(tx: Transaction): Transaction {
   return tx;
 }
 
-function makeUserKeyhashes(addr: BaseAddress): UserKeyhashes {
-  return {
-    pubKeyhash: credToKeyHash(addr.payment_cred()),
-    stakeKeyhash: credToKeyHash(addr.stake_cred()),
-  };
-}
-
-// export function makePubKeyHash(addr: BaseAddress): string {
-//   return credToKeyHash(addr.payment_cred());
-// }
-
-// export function makeStakeKeyHash(addr: BaseAddress): string {
-//   return credToKeyHash(addr.stake_cred());
-// }
-
-function credToKeyHash(cred: StakeCredential): string {
-  const keyHash = cred.to_keyhash();
-  if (typeof keyHash !== "undefined") {
-    return Buffer.from(keyHash.to_bytes()).toString("hex");
-  }
-  throw new Error("keyHash is undefined");
-}
-
 export async function getUserKeyhashes(
   instance: CIP30Instance
 ): Promise<UserKeyhashes> {
@@ -424,15 +398,30 @@ export async function getUserKeyhashes(
   throw new Error("userAddr is undefined");
 }
 
-export async function getUsedAddr(
-  instance: CIP30Instance
-): Promise<BaseAddress> {
-  const addresses = await instance.getUsedAddresses();
-  const addr = BaseAddress.from_address(
-    Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))
-  );
-  if (typeof addr !== "undefined") {
-    return addr;
-  }
-  throw new Error("addr is undefined");
+function makeUserKeyhashes(addr: BaseAddress): UserKeyhashes {
+  return {
+    pubKeyhash: credToKeyHash(addr.payment_cred()),
+    stakeKeyhash: credToKeyHash(addr.stake_cred()),
+  };
 }
+
+function credToKeyHash(cred: StakeCredential): HexString {
+  const keyHash = cred.to_keyhash();
+  if (typeof keyHash !== "undefined") {
+    return Buffer.from(keyHash.to_bytes()).toString("hex");
+  }
+  throw new Error("keyHash is undefined");
+}
+
+// export async function getUsedAddr(
+//   instance: CIP30Instance
+// ): Promise<BaseAddress> {
+//   const addresses = await instance.getUsedAddresses();
+//   const addr = BaseAddress.from_address(
+//     Address.from_bytes(Uint8Array.from(Buffer.from(addresses[0], "hex")))
+//   );
+//   if (typeof addr !== "undefined") {
+//     return addr;
+//   }
+//   throw new Error("addr is undefined");
+// }

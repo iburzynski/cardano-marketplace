@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { market } from "@/config"
+import { GlobeAltIcon, WalletIcon } from "@heroicons/vue/24/outline"
+
+const emit = defineEmits<{
+  (e: 'openWallet'): void
+}>()
+
+function openWallet(): void {
+  emit('openWallet')
+}
+</script>
+
+<template>
+  <header>
+    <nav class="bg-gray-800">
+      <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+        <div class="relative flex h-24 items-center justify-between">
+          <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+            <!-- Mobile menu button-->
+            <button type="button"
+              class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <!--
+            Icon when menu is closed.
+
+            Heroicon name: outline/bars-3
+
+            Menu open: "hidden", Menu closed: "block"
+          -->
+              <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+              <!--
+            Icon when menu is open.
+
+            Heroicon name: outline/x-mark
+
+            Menu open: "block", Menu closed: "hidden"
+          -->
+              <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+            <div class="flex flex-shrink-0 items-center">
+              <img class="block h-18 w-auto lg:hidden" src="../assets/ea_logo.png" alt="Your Company">
+              <img class="hidden h-18 w-auto lg:block" src="../assets/ea_logo.png" alt="Your Company">
+            </div>
+            <div class="hidden sm:ml-6 sm:block">
+              <div class="flex h-24 space-x-4 items-center">
+                <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+                <h1 class="text-red-400 font-semibold text-2xl">CNFT Marketplace</h1>
+                <a target="_blank" rel="noreferrer noopener"
+                  :href="'https://testnet.cardanoscan.io/address/'+market.address"
+                  class="text-gray-300 hover:bg-red-400 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+                  <GlobeAltIcon class="h-6 mr-1 inline" />View in Explorer
+                </a>
+                <a target="_blank" rel="noreferrer noopener" href="https://github.com/iburzynski/cardano-marketplace"
+                  class="text-gray-300 hover:bg-red-400 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+                  <svg class="mr-1 inline" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="18" height="18"
+                    viewBox="0 0 172 172" style="">
+                    <g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt"
+                      stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
+                      font-family="none" font-weight="none" font-size="none" text-anchor="none"
+                      style="mix-blend-mode: normal">
+                      <path d="M0,172v-172h172v172z" fill="none"></path>
+                      <g id="original-icon" fill="#ffffff">
+                        <path
+                          d="M61.20104,161.11584c2.44584,-1.05264 4.15896,-3.48472 4.15896,-6.31584v-18.576c0,-0.67768 0.05504,-1.38288 0.14104,-2.0984c-0.04816,0.01376 -0.09288,0.02408 -0.14104,0.0344c0,0 -10.32,0 -12.384,0c-5.16,0 -9.632,-2.064 -11.696,-6.192c-2.408,-4.472 -3.44,-12.04 -9.632,-16.168c-1.032,-0.688 -0.344,-1.72 1.72,-1.72c2.064,0.344 6.536,3.096 9.288,6.88c3.096,3.784 6.192,6.88 11.696,6.88c8.55528,0 13.1408,-0.43 15.89968,-1.9092c3.21296,-4.77816 7.66088,-8.4108 12.30832,-8.4108v-0.086c-19.49792,-0.62608 -31.95416,-7.10704 -37.754,-17.114c-12.6076,0.14448 -23.58464,1.3932 -29.84888,2.43208c-0.19952,-1.12488 -0.37152,-2.25664 -0.51944,-3.39528c6.18168,-1.01824 16.65992,-2.22568 28.7068,-2.45616c-0.38528,-0.94944 -0.71896,-1.92296 -1.00104,-2.92056c-12.07784,-0.61232 -22.50104,-0.13416 -28.16328,0.33368c-0.0688,-1.14208 -0.16168,-2.28072 -0.17544,-3.43656c5.67256,-0.4644 15.81368,-0.9288 27.58192,-0.38184c-0.27176,-1.72 -0.4472,-3.47784 -0.4472,-5.30792c0,-5.848 2.064,-12.04 5.848,-17.2c-1.72,-5.848 -4.128,-18.232 0.688,-22.704c9.288,0 15.824,4.472 18.92,7.224c5.84456,-2.41144 12.38056,-3.78744 19.60456,-3.78744c7.224,0 13.76,1.376 19.264,3.784c3.096,-2.752 9.632,-7.224 18.92,-7.224c5.16,4.816 2.408,17.2 0.688,22.704c3.784,5.16 5.848,11.008 5.504,17.2c0,1.66496 -0.1548,3.27144 -0.3784,4.84696c12.03656,-0.59168 22.45288,-0.11696 28.22176,0.35088c-0.00688,1.15928 -0.11352,2.29104 -0.17544,3.43656c-5.74824,-0.47472 -16.426,-0.9632 -28.75496,-0.30616c-0.30616,1.15584 -0.67768,2.28072 -1.118,3.3712c12.19824,0.15824 22.9276,1.33816 29.40512,2.37016c-0.14792,1.14208 -0.31992,2.27384 -0.51944,3.39528c-6.57728,-1.05264 -17.78824,-2.28416 -30.54376,-2.34608c-5.7276,9.90032 -17.9568,16.3572 -37.07288,17.11056v0.10664c8.944,0 17.2,13.416 17.2,22.704v18.576c0,2.83112 1.71312,5.2632 4.15896,6.31584c31.51384,-10.43008 54.32104,-40.15168 54.32104,-75.11584c0,-43.62608 -35.49048,-79.12 -79.12,-79.12c-43.62952,0 -79.12,35.49392 -79.12,79.12c0,34.96416 22.8072,64.68576 54.32104,75.11584z">
+                        </path>
+                      </g>
+                    </g>
+                  </svg>View on Github
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="absolute inset-y-0 right-0 flex items-center h-24 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+            <a
+              @click="openWallet" class="text-gray-300 hover:bg-red-400 cursor-pointer hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+              <WalletIcon class="h-6 mr-1 inline" />Wallet
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile menu, show/hide based on menu state. -->
+      <div class="sm:hidden" id="mobile-menu">
+        <div class="space-y-1 px-2 pt-2 pb-3">
+          <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+          <a href="#" class="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium"
+            aria-current="page">Dashboard</a>
+          <a target="_blank" rel="noreferrer noopener" :href="'https://testnet.cardanoscan.io/address/'+market.address"
+            class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+            <GlobeAltIcon class="h-6 mr-1" />View in Explorer
+          </a>
+          <a href="#"
+            class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Projects</a>
+
+          <a href="#"
+            class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Calendar</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+</template>
+    <!-- <header class="w-full font-semibold flex items-center flex-wrap shadow-lg p-6">
+      <div class="w-1/3"><img src="./assets/ea_logo.png" /></div>
+      <h1 class="text-orange-400 text-2xl w-1/3">Marketplace</h1>
+      <nav class="
+          w-1/3
+          pl-5
+          flex flex-wrap
+          items-center
+          justify-between
+          py-2
+          bg-gray-100cod
+          text-gray-500
+          hover:text-gray-700
+          focus:text-gray-700
+          navbar navbar-expand-lg navbar-light
+          sticky
+          ">
+        <div class="collapse navbar-collapse flex-grow items-center" id="navbarSupportedContent">
+
+          <ul class=" navbar-nav flex flex-column pl-0 list-style-none justify-end space-x-8 cursor-pointer">
+            <li class="nav-item pl-2">
+              <a class="nav-link flex text-white hover:text-orange-400 focus:text-gray-700 p-0" @click="open">
+                <WalletIcon class="h-6 mr-1" />Wallet
+              </a>
+            </li>
+            <div>
+              <li class="nav-item pl-2">
+                <a :href="'https://testnet.cardanoscan.io/address/'+market.address"
+                  class="nav-link flex text-white hover:text-orange-400 focus:text-gray-700 p-0">
+                  <GlobeAltIcon class="h-6 mr-1" />View in Explorer
+                </a>
+              </li>
+            </div>
+          </ul>
+        </div>
+      </nav>
+    </header> -->

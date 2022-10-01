@@ -66,7 +66,6 @@ export async function convertUtxos(utxos: BfUTXO[]) {
     }, [])
   );
   // https://stackoverflow.com/questions/64928212/how-to-use-promise-allsettled-with-typescript
-  // const dbUtxos: PromiseSettledResult<DatabaseUTXO>[] = await Promise.allSettled(utxos)
   const isRejected = (
     input: PromiseSettledResult<unknown>
   ): input is PromiseRejectedResult => input.status === "rejected";
