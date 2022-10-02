@@ -163,16 +163,16 @@ async function sell(asset: MultiAssetObj, sellAmount: number): Promise<void> {
     <Dialog as="div" class="relative z-10" @close="closeWallet">
       <TransitionChild as="template" enter="ease-in-out duration-500" enter-from="opacity-0" enter-to="opacity-100"
         leave="ease-in-out duration-500" leave-from="opacity-100" leave-to="opacity-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 bg-black bg-opacity-75 transition-opacity"></div>
       </TransitionChild>
       <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
           <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-            <TransitionChild as="template" enter="transform transition ease-in-out duration-500 sm:duration-700"
+            <TransitionChild class="wallet-panel" as="template" enter="transform transition ease-in-out duration-500 sm:duration-700"
               enter-from="translate-x-full" enter-to="translate-x-0"
               leave="transform transition ease-in-out duration-500 sm:duration-700" leave-from="translate-x-0"
               leave-to="translate-x-full">
-              <DialogPanel class="pointer-events-auto relative w-screen max-w-md">
+              <DialogPanel class="pointer-events-auto relative w-screen max-w-md font-mono">
                 <TransitionChild as="template" enter="ease-in-out duration-500" enter-from="opacity-0"
                   enter-to="opacity-100" leave="ease-in-out duration-500" leave-from="opacity-100" leave-to="opacity-0">
                   <div class="absolute top-0 left-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4">
@@ -184,23 +184,24 @@ async function sell(asset: MultiAssetObj, sellAmount: number): Promise<void> {
                     </button>
                   </div>
                 </TransitionChild>
-                <div class="flex h-full flex-col overflow-y-scroll bg-gray-800 p-4 shadow-xl">
-                  <div class="px-4 sm:px-6">
-                    <DialogTitle class="text-2xl font-semibold text-red-400">
-                      <WalletIcon class="inline h-12 mr-4" /><span v-if="!instance">Connect </span>Wallet
+                <div
+                  class="flex h-full flex-col overflow-y-scroll bg-gray-800 bg-opacity-95 shadow-xl p-6 border-l-4 border-l-gray-900">
+                  <div class="text-right">
+                    <DialogTitle class="text-3xl font-semibold font-display text-gray-100">
+                      <WalletIcon class="inline h-12 mr-4" /><span class="underline underline-offset-8"><span v-if="!instance">Connect </span>Wallet</span>
                     </DialogTitle>
                   </div>
-                  <div class="relative mt-6 flex-1 px-4 sm:px-6">
+                  <div class="relative mt-6 flex-1">
                     <div v-if="!instance">
                       <div v-if="providers?.length == 0">
                         <div class="text-gray-600 font-semibold my-10 text-center">
                           Please Install a Cardano Wallet Plugin
                         </div>
                       </div>
-                      <div v-else>
+                      <div v-else class="bg-sky-900 bg-opacity-50 border-4 border-gray-900 rounded-md p-4">
                         <div class="flex mb-3" v-for="provider in providers" :key="provider.name">
                           <button @click="connectProvider(provider)"
-                            class="flex-grow content-start text-left text-orange-400 text-xl focus:border-b-orange-400 focus:text-white hover:text-white focus:border-0 focus:m-0 focus:text-2xl">
+                            class="flex-grow content-start text-left text-purple-300 text-xl focus:border-b-purple-300 focus:text-white hover:text-white font-display focus:border-0 focus:m-0 focus:text-2xl">
                             <img v-if="provider.icon" class="inline w-12 h-12 mr-2" :src="provider.icon" />
                             <img v-else class="inline w-12 h-12 mr-2" src="/cardano.png" />
                             <span>{{ provider.name }}</span>
@@ -208,17 +209,17 @@ async function sell(asset: MultiAssetObj, sellAmount: number): Promise<void> {
                         </div>
                       </div>
                     </div>
-                    <div v-else-if="currentProvider" class="flex flex-col space-y-6 bg-sky-900 rounded-md p-4">
-                      <div class="flex"><img v-if="currentProvider.icon" class="align-bottom w-16 h-16 mr-2"
-                          :src="currentProvider.icon" />
+                    <div v-else-if="currentProvider" class="flex flex-col space-y-6 bg-sky-900 bg-opacity-50 border-4 border-gray-900 rounded-md p-4">
+                      <div class="flex bg-gray-900 p-4 rounded-xl"><img v-if="currentProvider.icon"
+                          class="align-bottom w-16 h-16 mr-2" :src="currentProvider.icon" />
                         <img v-else class="align-bottom w-12 h-12" src="/cardano.png" />
                         <div class="flex flex-col w-full">
                           <div class="flex justify-between">
-                            <h3 class="text-xl top-0 pb-1 font-bold text-gray-400">
+                            <h3 class="text-xl top-0 pb-1 font-bold text-gray-200 text-2xl">
                               {{ currentProvider.name }}
                             </h3>
                             <button type="button" @click="disconnectProvider" class="float-right h-full">
-                              <img class="inline text-red-400 h-4 w-4" src="/disconnect.svg" />
+                              <font-awesome-icon icon="fa-solid fa-link-slash" inverse />
                             </button>
                           </div>
                           <div v-if="displayedKeyhash" class="flex text-gray-200 justify-between">
@@ -228,18 +229,18 @@ async function sell(asset: MultiAssetObj, sellAmount: number): Promise<void> {
                           </div>
                         </div>
                       </div>
-                      <div class="flex justify-between items-center">
-                        <h4 class="text-yellow-400 text-xl text-right font-semibold"><span class="text-2xl">₳</span> {{
+                      <div class="flex justify-between space-x-4 items-stretch">
+                        <h4 class="text-yellow-200 text-3xl text-right font-semibold bg-gray-900 p-4 rounded-xl w-1/2">₳ {{
                         displayAdaBalance }}</h4>
-                        <button @click="toggleForm" class="bg-green-400 hover:bg-yellow-400 p-2 rounded-lg">
+                        <button @click="toggleForm" class="w-1/2 bg-teal-400 hover:bg-yellow-200 p-2 rounded-xl font-semibold text-lg font-display border-2 border-gray-900">
                           <PhotoIcon class="h-6 mr-2 inline" /> Mint NFT
                         </button>
                       </div>
                       <div class="mint-form" v-show="isFormShown">
                         <MintForm @hide-form="toggleForm" @mint="mint" />
                       </div>
-                      <div class="wallet-assets flex flex-col space-y-6 justify-center">
-                        <h3 class="text-lg text-yellow-400 font-semibold">Assets</h3>
+                      <div class="wallet-assets flex flex-col space-y-6 justify-center bg-gray-900 rounded-xl p-4">
+                        <h3 class="text-xl font-display text-white font-semibold underline underline-offset-8">Assets</h3>
                         <template v-for="(asset, index) in balance.multiAssets" :key="index">
                           <WalletAsset :asset="asset" @sell="sell" />
                         </template>
@@ -255,3 +256,9 @@ async function sell(asset: MultiAssetObj, sellAmount: number): Promise<void> {
     </Dialog>
   </TransitionRoot>
 </template>
+
+<style>
+  .wallet-panel {
+    background: url('src/assets/coins-bg.jpg')
+}
+</style>

@@ -40,7 +40,7 @@ function setAltImg() {
 </script>
 
 <template>
-  <div class="nft p-4 flex flex-wrap w-1/3 bg-white rounded-lg shadow-lg">
+  <div class="nft p-4 flex bg-white bg-opacity-75 rounded-lg shadow-xl">
     <img :alt="asset.metadata.name +'_img'" class="inline-block w-1/2"
       :src="imgSrc"
       @error="setAltImg"/>
@@ -66,9 +66,9 @@ function setAltImg() {
           </div> <!-- /copyright -->
         </div> <!-- /extra -->
       </div> <!-- /metadata -->
-      <h3 class="text-2xl font-bold"><span class="text-3xl">₳</span> {{ adaPrice }}</h3>
+      <h3 class="text-2xl font-bold">₳ {{ adaPrice }}</h3>
       <button @click="connected ? buyAsset() : openWallet()"
-        class="bg-green-400 hover:bg-yellow-400 text-gray-800 font-semibold py-2 px-4 rounded">
+        class="bg-teal-500 hover:bg-yellow-200 text-gray-800 font-semibold py-2 px-4 rounded-xl text-xl font-display">
         Buy
       </button>
     </div> <!-- /inset -->

@@ -74,9 +74,9 @@ function logWallets() {
 </script>
 
 <template>
-  <div class="bg-sky-900 h-full flex flex-col justify-between">
-   <Navbar @open-wallet="open" />
-    <main class="nfts max-w-7xl px-2 sm:px-6 lg:px-8 mx-auto flex space-x-2 sm:space-x-6 lg:space-x-8">
+  <div class="bg-sky-900 bg-opacity-75 min-h-screen flex flex-col justify-between font-mono text-md">
+    <Navbar @open-wallet="open" />
+    <main class="nfts max-w-7xl p-8 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div v-if="marketUtxos.length==0" class="nfts__empty text-gray-400 font-semibold text-center my-5"> Marketplace is
         empty
       </div>
@@ -86,6 +86,12 @@ function logWallets() {
     </main>
     <Wallet :instance="instance" :wallet-shown="walletShown" :wallet-utxos="walletUtxos" @connect-provider="connect"
       @disconnect-provider="disconnect" @close-wallet="close" />
-    <Footer/>
+    <Footer />
   </div>
 </template>
+
+<style>
+  body {
+    background: url('src/assets/galaga-bg.jpg')
+}
+</style>

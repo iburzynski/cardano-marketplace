@@ -34,10 +34,11 @@ function toggleInput(): void {
       <span v-if="asset.metadata.name" class="text-green-400 text-xl font-bold pb-2">
         {{ asset.metadata.name }}
       </span>
-      <div v-else class="text-green-400 font-bold">
+      <div v-else class="text-purple-400 font-semibold text-lg">
         {{ asset.policy.substring(0, 8) }}...{{ asset.tokenName }}
       </div>
-      <button class="text-gray-800 text-sm cursor-pointer bg-green-400 hover:bg-yellow-400 p-2 rounded-lg" @click="toggleInput">
+      <button class="font-display font-semibold text-gray-800 text-sm cursor-pointer bg-teal-500 hover:bg-yellow-200 p-2 rounded-lg"
+        @click="toggleInput">
         {{!inputShown ? "Sell" : "Cancel"}}
       </button>
     </div>
